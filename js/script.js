@@ -100,20 +100,27 @@
   const dialogImage = document.querySelector('[data-lightbox-image]');
   const closeButton = document.querySelector('[data-lightbox-close]');
 
+  const setLightboxLock = isOpen => {
+    document.documentElement.classList.toggle('lightbox-open', isOpen);
+    document.body.classList.toggle('lightbox-open', isOpen);
+  };
+
   document.querySelectorAll('[data-lightbox]').forEach(button => {
     button.addEventListener('click', () => {
       if (!dialog || !dialogImage) return;
       dialogImage.src = button.dataset.lightbox;
+      setLightboxLock(true);
       dialog.showModal();
     });
   });
 
   const closeDialog = () => {
     if (dialog?.open) dialog.close();
+    setLightboxLock(false);
     if (dialogImage) dialogImage.src = '';
   };
   closeButton?.addEventListener('click', closeDialog);
-  dialog?.addEventListener('close', () => { if (dialogImage) dialogImage.src = ''; });
+  dialog?.addEventListener('close', () => { setLightboxLock(false); if (dialogImage) dialogImage.src = ''; });
   dialog?.addEventListener('click', event => {
     if (event.target === dialog) closeDialog();
   });

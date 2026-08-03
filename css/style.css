@@ -208,8 +208,8 @@ button { color: inherit; font: inherit; }
 .projects__intro h2 { max-width: 17ch; }
 .projects__intro p { margin: 0; color: rgba(255,255,255,.7); font-size: var(--body-size); line-height: 1.6; }
 .project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 2.3vw, 36px); }
-.project-card { position: relative; padding: 0; border: 0; border-radius: var(--radius); overflow: hidden; cursor: zoom-in; background: #222; text-align: left; }
-.project-card img { aspect-ratio: 1.414/1; object-fit: cover; object-position: center top; transition: transform .65s cubic-bezier(.2,.7,.2,1), filter .4s ease; }
+.project-card { position: relative; padding: 0; border: 0; border-radius: var(--radius); overflow: hidden; cursor: zoom-in; background: var(--paper); text-align: left; }
+.project-card img { display: block; aspect-ratio: 1.414/1; object-fit: contain; object-position: center center; transition: transform .65s cubic-bezier(.2,.7,.2,1), filter .4s ease; }
 .project-card:hover img { transform: scale(1.035); filter: saturate(1.05); }
 .project-card__meta { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 50px 22px 20px; color: white; background: linear-gradient(transparent, rgba(0,0,0,.72)); opacity: 0; transform: translateY(10px); transition: opacity .3s ease, transform .3s ease; }
 .project-card:hover .project-card__meta, .project-card:focus-visible .project-card__meta { opacity: 1; transform: none; }
@@ -267,7 +267,7 @@ button { color: inherit; font: inherit; }
 
 .contact { min-height: 92svh; padding: clamp(90px, 12vw, 170px) var(--pad) 32px; color: white; background: var(--accent); display: flex; flex-direction: column; }
 .contact__eyebrow { margin-bottom: clamp(18px, 2vw, 30px); font-size: var(--small-size); text-transform: uppercase; letter-spacing: .1em; }
-.contact__mail { display: inline-block; align-self: flex-start; margin: 0 0 auto; font-family: var(--font-display); font-size: clamp(64px, 11.4vw, 170px); font-weight: 800; line-height: .88; letter-spacing: .01em; word-spacing: -.08em; padding-bottom: .08em; border-bottom: .045em solid currentColor; transition: opacity .25s ease; }
+.contact__mail { display: inline-block; align-self: flex-start; margin: 0 0 auto; font-family: var(--font-display); font-size: clamp(64px, 11.4vw, 170px); font-weight: 800; line-height: .92; letter-spacing: .01em; word-spacing: -.08em; padding-bottom: .14em; border-bottom: .04em solid currentColor; transition: opacity .25s ease; }
 .contact__mail:hover { opacity: .65; }
 .contact__links { display: flex; flex-wrap: wrap; gap: 12px; padding: 30px 0; border-top: 1px solid rgba(255,255,255,.45); border-bottom: 1px solid rgba(255,255,255,.45); }
 .contact__links a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px; border: 1px solid rgba(255,255,255,.55); border-radius: 100px; font-size: 13px; transition: color .25s ease, background .25s ease; }
@@ -298,11 +298,15 @@ button { color: inherit; font: inherit; }
 }
 .contact__footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 26px; font-size: var(--small-size); text-transform: uppercase; letter-spacing: .1em; }
 
-.lightbox { max-width: none; width: 100vw; height: 100vh; margin: 0; padding: 70px clamp(18px, 4vw, 60px) 30px; border: 0; background: rgba(8,8,10,.94); color: white; }
+.lightbox { max-width: none; width: 100vw; height: 100vh; margin: 0; padding: 70px clamp(18px, 4vw, 60px) 30px; border: 0; background: rgba(8,8,10,.94); color: white; overflow: hidden; touch-action: none; }
 .lightbox::backdrop { background: rgba(8,8,10,.94); }
 .lightbox[open] { display: grid; place-items: center; }
-.lightbox img { max-width: min(1400px, 94vw); max-height: 86vh; object-fit: contain; }
-.lightbox__close { position: fixed; top: 20px; right: 24px; z-index: 2; width: 46px; height: 46px; border: 1px solid rgba(255,255,255,.6); border-radius: 50%; color: white; background: transparent; font-size: 30px; line-height: 1; cursor: pointer; }
+.lightbox img { max-width: min(1400px, 94vw); max-height: 86vh; object-fit: contain; touch-action: none; }
+.lightbox__close { position: fixed; top: 20px; right: 24px; z-index: 2; display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border: 1px solid rgba(255,255,255,.6); border-radius: 50%; color: white; background: transparent; font-size: 28px; line-height: 1; cursor: pointer; appearance: none; outline: none; box-shadow: none; }
+.lightbox__close:focus,
+.lightbox__close:focus-visible { outline: none; box-shadow: none; }
+html.lightbox-open,
+body.lightbox-open { overflow: hidden; overscroll-behavior: none; }
 
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1); }
 .reveal.is-visible { opacity: 1; transform: none; }
