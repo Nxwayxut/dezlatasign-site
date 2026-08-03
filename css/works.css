@@ -144,15 +144,27 @@
   place-items: center;
   width: 52px;
   height: 52px;
+  padding: 0;
   border: 1px solid rgba(255,255,255,.6);
   border-radius: 50%;
   color: white;
   background: rgba(0,0,0,.28);
   backdrop-filter: blur(8px);
-  font-size: 22px;
+  font-size: 0;
+  line-height: 1;
   transform: translateY(-50%);
   cursor: pointer;
   transition: color .2s ease, background .2s ease, transform .2s ease;
+}
+.gallery-card__arrow::before {
+  content: '→';
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+  transform: translateX(0);
+}
+.gallery-card__arrow--prev::before {
+  transform: rotate(180deg);
 }
 .gallery-card__arrow:hover,
 .gallery-card__arrow:focus-visible { color: var(--accent); background: white; }
