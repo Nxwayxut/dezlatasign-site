@@ -100,27 +100,180 @@
   const dialogImage = document.querySelector('[data-lightbox-image]');
   const closeButton = document.querySelector('[data-lightbox-close]');
 
+  let lightboxScrollY = 0;
+  let lightboxScale = 1;
+  let lightboxX = 0;
+  let lightboxY = 0;
+  let pinchStartDistance = 0;
+  let pinchStartScale = 1;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  let lastTapAt = 0;
+  let pointerMoved = false;
+  const activePointers = new Map();
+
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+  const applyLightboxTransform = () => {
+    if (!dialogImage) return;
+    dialogImage.style.transform = `translate3d(${lightboxX}px, ${lightboxY}px, 0) scale(${lightboxScale})`;
+    dialogImage.classList.toggle('is-zoomed', lightboxScale > 1.01);
+  };
+
+  const resetLightboxTransform = () => {
+    lightboxScale = 1;
+    lightboxX = 0;
+    lightboxY = 0;
+    activePointers.clear();
+    pinchStartDistance = 0;
+    pointerMoved = false;
+    if (dialogImage) {
+      dialogImage.classList.remove('is-dragging', 'is-zoomed');
+      dialogImage.style.transform = '';
+    }
+  };
+
+  const setLightboxScale = nextScale => {
+    lightboxScale = clamp(nextScale, 1, 4);
+    if (lightboxScale === 1) {
+      lightboxX = 0;
+      lightboxY = 0;
+    }
+    applyLightboxTransform();
+  };
+
   const setLightboxLock = isOpen => {
     document.documentElement.classList.toggle('lightbox-open', isOpen);
     document.body.classList.toggle('lightbox-open', isOpen);
+
+    if (isOpen) {
+      lightboxScrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${lightboxScrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      return;
+    }
+
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    window.scrollTo(0, lightboxScrollY);
+  };
+
+  const getPointerDistance = () => {
+    const points = [...activePointers.values()];
+    if (points.length < 2) return 0;
+    return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
   };
 
   document.querySelectorAll('[data-lightbox]').forEach(button => {
     button.addEventListener('click', () => {
       if (!dialog || !dialogImage) return;
+      resetLightboxTransform();
       dialogImage.src = button.dataset.lightbox;
       setLightboxLock(true);
       dialog.showModal();
     });
   });
 
+  dialogImage?.addEventListener('wheel', event => {
+    if (!dialog?.open) return;
+    event.preventDefault();
+    const direction = event.deltaY < 0 ? 1 : -1;
+    setLightboxScale(lightboxScale + direction * 0.25);
+  }, { passive: false });
+
+  dialogImage?.addEventListener('dblclick', event => {
+    event.preventDefault();
+    setLightboxScale(lightboxScale > 1 ? 1 : 2);
+  });
+
+  dialogImage?.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    pointerMoved = false;
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    dialogImage.setPointerCapture?.(event.pointerId);
+    dialogImage.classList.add('is-dragging');
+
+    if (activePointers.size === 1) {
+      lastPointerX = event.clientX;
+      lastPointerY = event.clientY;
+    } else if (activePointers.size === 2) {
+      pinchStartDistance = getPointerDistance();
+      pinchStartScale = lightboxScale;
+    }
+  });
+
+  dialogImage?.addEventListener('pointermove', event => {
+    if (!activePointers.has(event.pointerId)) return;
+    event.preventDefault();
+
+    const previous = activePointers.get(event.pointerId);
+    if (Math.abs(event.clientX - previous.x) > 2 || Math.abs(event.clientY - previous.y) > 2) {
+      pointerMoved = true;
+    }
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (activePointers.size >= 2) {
+      const distance = getPointerDistance();
+      if (pinchStartDistance > 0) {
+        setLightboxScale(pinchStartScale * (distance / pinchStartDistance));
+      }
+      return;
+    }
+
+    if (lightboxScale > 1) {
+      lightboxX += event.clientX - lastPointerX;
+      lightboxY += event.clientY - lastPointerY;
+      applyLightboxTransform();
+    }
+
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+  });
+
+  const finishPointer = event => {
+    if (!activePointers.has(event.pointerId)) return;
+    activePointers.delete(event.pointerId);
+    dialogImage?.releasePointerCapture?.(event.pointerId);
+
+    if (event.pointerType === 'touch' && !pointerMoved) {
+      const now = Date.now();
+      if (now - lastTapAt < 320) {
+        setLightboxScale(lightboxScale > 1 ? 1 : 2);
+        lastTapAt = 0;
+      } else {
+        lastTapAt = now;
+      }
+    }
+
+    if (activePointers.size === 1) {
+      const remaining = [...activePointers.values()][0];
+      lastPointerX = remaining.x;
+      lastPointerY = remaining.y;
+    } else if (activePointers.size === 0) {
+      dialogImage?.classList.remove('is-dragging');
+      pinchStartDistance = 0;
+    }
+  };
+
+  dialogImage?.addEventListener('pointerup', finishPointer);
+  dialogImage?.addEventListener('pointercancel', finishPointer);
+
   const closeDialog = () => {
     if (dialog?.open) dialog.close();
-    setLightboxLock(false);
-    if (dialogImage) dialogImage.src = '';
   };
+
   closeButton?.addEventListener('click', closeDialog);
-  dialog?.addEventListener('close', () => { setLightboxLock(false); if (dialogImage) dialogImage.src = ''; });
+  dialog?.addEventListener('close', () => {
+    setLightboxLock(false);
+    resetLightboxTransform();
+    if (dialogImage) dialogImage.src = '';
+  });
   dialog?.addEventListener('click', event => {
     if (event.target === dialog) closeDialog();
   });
