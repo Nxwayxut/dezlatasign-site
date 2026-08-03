@@ -131,6 +131,7 @@
   width: 100%;
   aspect-ratio: 1.75 / 1;
   object-fit: cover;
+  object-position: center top;
 }
 .gallery-card__arrow {
   position: absolute;
@@ -252,10 +253,27 @@
   .category-index a:nth-child(odd) { border-right: 0; }
   .category-index a { grid-template-columns: 42px 1fr auto; min-height: 64px; padding-right: 10px; }
   .portfolio-category { padding: 72px 18px; scroll-margin-top: 70px; }
-  .category-heading { grid-template-columns: 36px 1fr; gap: 12px; padding-bottom: 28px; }
-  .category-heading__number { padding-top: 7px; }
-  .category-heading h2 { font-size: clamp(42px, 12vw, 62px); }
-  .category-heading p { grid-column: 1 / -1; padding-left: 48px; }
+  .category-heading {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding-bottom: 28px;
+    justify-items: center;
+    text-align: center;
+  }
+  .category-heading__number {
+    padding-top: 0;
+    justify-self: center;
+  }
+  .category-heading h2 {
+    font-size: clamp(42px, 12vw, 62px);
+    text-align: center;
+  }
+  .category-heading p {
+    grid-column: 1;
+    padding-left: 0;
+    max-width: 32rem;
+    text-align: center;
+  }
   .featured-projects { gap: 62px; }
   .gallery-card__slide img { aspect-ratio: 1.18 / 1; }
   .gallery-card__arrow { width: 44px; height: 44px; font-size: 18px; }
