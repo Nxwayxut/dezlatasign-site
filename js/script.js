@@ -13,19 +13,59 @@
   updateHeader();
   window.addEventListener('scroll', updateHeader, { passive: true });
 
-  const closeMenu = () => {
+  let lockedScrollY = 0;
+
+  const preventMenuTouchScroll = event => {
+    if (document.body.classList.contains('menu-open')) event.preventDefault();
+  };
+
+  const openMenu = () => {
+    lockedScrollY = window.scrollY;
+    document.body.style.top = `-${lockedScrollY}px`;
+    menuToggle?.setAttribute('aria-expanded', 'true');
+    menu?.classList.add('is-open');
+    document.body.classList.add('menu-open');
+    document.addEventListener('touchmove', preventMenuTouchScroll, { passive: false });
+  };
+
+  const closeMenu = ({ restoreScroll = true } = {}) => {
     menuToggle?.setAttribute('aria-expanded', 'false');
     menu?.classList.remove('is-open');
     document.body.classList.remove('menu-open');
+    document.body.style.top = '';
+    document.removeEventListener('touchmove', preventMenuTouchScroll);
+    if (restoreScroll) window.scrollTo(0, lockedScrollY);
   };
 
   menuToggle?.addEventListener('click', () => {
     const isOpen = menuToggle.getAttribute('aria-expanded') === 'true';
-    menuToggle.setAttribute('aria-expanded', String(!isOpen));
-    menu?.classList.toggle('is-open', !isOpen);
-    document.body.classList.toggle('menu-open', !isOpen);
+    if (isOpen) closeMenu();
+    else openMenu();
   });
-  menu?.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+
+  menu?.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', event => {
+      const href = link.getAttribute('href');
+      if (!href?.startsWith('#')) {
+        closeMenu();
+        return;
+      }
+
+      const target = document.querySelector(href);
+      if (!target) {
+        closeMenu();
+        return;
+      }
+
+      event.preventDefault();
+      closeMenu({ restoreScroll: true });
+      window.requestAnimationFrame(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', href);
+      });
+    });
+  });
+
   window.addEventListener('keydown', event => {
     if (event.key === 'Escape') closeMenu();
   });
