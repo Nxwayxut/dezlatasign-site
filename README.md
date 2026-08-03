@@ -33,3 +33,10 @@
 - Цвета и размеры: `css/style.css`, блок `:root`
 - Анимации и меню: `js/script.js`
 - Изображения: папка `images`
+
+
+## Финальный домен
+
+Основной адрес сайта: https://dezlatasign.ru/
+
+После подключения домена в Cloudflare Pages рекомендуется настроить постоянный редирект с адреса `*.pages.dev` и с `www.dezlatasign.ru` на `https://dezlatasign.ru/`.

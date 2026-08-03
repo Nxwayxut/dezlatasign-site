@@ -4,6 +4,7 @@
   const menuToggle = document.querySelector('[data-menu-toggle]');
   const menu = document.querySelector('[data-menu]');
   const year = document.querySelector('[data-year]');
+  const menuToggleLabel = menuToggle?.querySelector('.sr-only');
 
   window.addEventListener('load', () => {
     window.setTimeout(() => preloader?.classList.add('is-hidden'), 250);
@@ -23,6 +24,7 @@
     lockedScrollY = window.scrollY;
     document.body.style.top = `-${lockedScrollY}px`;
     menuToggle?.setAttribute('aria-expanded', 'true');
+    if (menuToggleLabel) menuToggleLabel.textContent = 'Закрыть меню';
     menu?.classList.add('is-open');
     document.body.classList.add('menu-open');
     document.addEventListener('touchmove', preventMenuTouchScroll, { passive: false });
@@ -30,6 +32,7 @@
 
   const closeMenu = ({ restoreScroll = true } = {}) => {
     menuToggle?.setAttribute('aria-expanded', 'false');
+    if (menuToggleLabel) menuToggleLabel.textContent = 'Открыть меню';
     menu?.classList.remove('is-open');
     document.body.classList.remove('menu-open');
     document.body.style.top = '';
@@ -110,6 +113,7 @@
     if (dialogImage) dialogImage.src = '';
   };
   closeButton?.addEventListener('click', closeDialog);
+  dialog?.addEventListener('close', () => { if (dialogImage) dialogImage.src = ''; });
   dialog?.addEventListener('click', event => {
     if (event.target === dialog) closeDialog();
   });

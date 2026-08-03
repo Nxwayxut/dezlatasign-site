@@ -17,7 +17,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; }
 body {
   margin: 0;
   color: var(--ink);
@@ -26,6 +26,7 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
+main section[id] { scroll-margin-top: 88px; }
 body.menu-open {
   position: fixed;
   inset: 0;
