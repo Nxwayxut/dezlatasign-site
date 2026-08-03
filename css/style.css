@@ -403,3 +403,201 @@ button { color: inherit; font: inherit; }
 }
 
 @media (max-width: 620px) { .brand__mark { min-width: 36px; height: 36px; padding: 0 10px; font-size: 14px; } .brand__mark .mark-dot { font-size: 14px; transform: translateY(-2px); } }
+
+
+/* Mobile overflow and layout hardening */
+@media (max-width: 620px) {
+  :root {
+    --pad: 16px;
+    --section-title-size: clamp(46px, 12vw, 60px);
+    --body-size: 15px;
+    --small-size: 11px;
+  }
+
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
+
+  body,
+  main,
+  .site-header,
+  .hero,
+  .section,
+  .projects,
+  .contact {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  main {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .site-header {
+    width: 100%;
+    padding-left: var(--pad);
+    padding-right: var(--pad);
+  }
+
+  .hero,
+  .section,
+  .projects,
+  .contact {
+    width: 100%;
+    padding-left: var(--pad);
+    padding-right: var(--pad);
+  }
+
+  .projects {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .hero__title-wrap,
+  .hero__bottom,
+  .about__grid,
+  .about__copy,
+  .about__text,
+  .projects__intro,
+  .project-grid,
+  .services__head,
+  .price-list,
+  .price-row,
+  .contact__links,
+  .contact__footer {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero__title,
+  .section h2,
+  .price-row h3,
+  .contact__mail,
+  .hero__bottom p,
+  .about__text p,
+  .projects__intro p,
+  .services__head p {
+    max-width: 100%;
+  }
+
+  .hero__title {
+    font-size: clamp(40px, 12.6vw, 58px);
+    line-height: .94;
+    overflow-wrap: anywhere;
+  }
+
+  .hero__art {
+    width: min(100%, 420px);
+    max-width: 100%;
+  }
+
+  .section h2 {
+    font-size: var(--section-title-size);
+    line-height: 1;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
+  .about__copy h2,
+  .projects__intro h2,
+  .services__head h2 {
+    max-width: 100%;
+  }
+
+  .about__image {
+    width: 100%;
+    max-width: 100%;
+    transform: none;
+  }
+
+  .about__image img,
+  .project-card,
+  .project-card img {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .projects__intro,
+  .services__head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project-card__meta {
+    gap: 10px;
+  }
+
+  .project-card__meta b,
+  .project-card__meta span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .price-row {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .price-row h3 {
+    min-width: 0;
+    font-size: clamp(22px, 7.2vw, 30px);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .price-row b {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .contact__mail {
+    width: fit-content;
+    max-width: 100%;
+    font-size: clamp(48px, 15vw, 70px);
+    line-height: .94;
+    overflow-wrap: anywhere;
+  }
+
+  .contact__links {
+    gap: 10px;
+  }
+
+  .contact__links a {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 12px;
+  }
+
+  .contact__links a span {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .contact-link--vk {
+    width: 48px !important;
+    max-width: 48px !important;
+    align-self: flex-start;
+  }
+
+  .contact__footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .lightbox {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
