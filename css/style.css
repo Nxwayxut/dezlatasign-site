@@ -220,8 +220,28 @@ button { color: inherit; font: inherit; }
 .contact__links a:hover { color: var(--accent); background: white; }
 .contact__links svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; overflow: visible; flex: 0 0 auto; }
 .contact__links a:last-child svg { width: 18px; height: 18px; fill: currentColor; stroke: none; transform: scale(1.08); transform-origin: center; }
-.contact-link--vk { width: 48px; min-width: 48px; padding: 0; justify-content: center; gap: 0; }
-.contact-link--vk .vk-icon-image { display: block; width: 23px; height: 23px; object-fit: contain; flex: 0 0 auto; }
+.contact-link--vk {
+  width: 48px;
+  min-width: 48px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+}
+.contact-link--vk .vk-icon-image {
+  display: block;
+  width: 23px;
+  height: 23px;
+  flex: 0 0 auto;
+  background: currentColor;
+  -webkit-mask: url("../images/vk-white.png") center / contain no-repeat;
+  mask: url("../images/vk-white.png") center / contain no-repeat;
+}
+.contact-link--vk:hover,
+.contact-link--vk:focus-visible {
+  color: var(--accent);
+  background: white;
+  border-color: white;
+}
 .contact__footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 26px; font-size: var(--small-size); text-transform: uppercase; letter-spacing: .1em; }
 
 .lightbox { max-width: none; width: 100vw; height: 100vh; margin: 0; padding: 70px clamp(18px, 4vw, 60px) 30px; border: 0; background: rgba(8,8,10,.94); color: white; }
