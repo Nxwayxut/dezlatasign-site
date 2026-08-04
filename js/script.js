@@ -76,15 +76,29 @@
   if (year) year.textContent = new Date().getFullYear();
 
   const revealItems = document.querySelectorAll('.reveal');
-  const revealObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        revealObserver.unobserve(entry.target);
-      }
+  if ('IntersectionObserver' in window) {
+    revealItems.forEach(item => {
+      const rect = item.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 1.15) item.classList.add('is-visible');
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -50px' });
-  revealItems.forEach(item => revealObserver.observe(item));
+
+    document.documentElement.classList.add('reveal-enabled');
+
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -50px' });
+
+    revealItems.forEach(item => {
+      if (!item.classList.contains('is-visible')) revealObserver.observe(item);
+    });
+  } else {
+    revealItems.forEach(item => item.classList.add('is-visible'));
+  }
 
   const parallax = document.querySelector('[data-parallax]');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
