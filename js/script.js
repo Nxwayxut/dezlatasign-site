@@ -110,6 +110,252 @@
     }, { passive: true });
   }
 
+  const projectGrid = document.querySelector('.project-grid');
+  if (projectGrid) {
+    const cards = [...projectGrid.querySelectorAll('.project-card')];
+
+    if (cards.length >= 6) {
+      const galleryStyles = document.createElement('style');
+      galleryStyles.textContent = `
+        .projects .project-grid {
+          display: block;
+        }
+        .project-gallery {
+          width: 100%;
+        }
+        .project-gallery + .project-gallery {
+          margin-top: clamp(40px, 6vw, 84px);
+        }
+        .project-gallery__viewport {
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+          border-radius: var(--radius);
+          background: var(--paper);
+        }
+        .project-gallery .project-card {
+          display: none;
+          width: 100%;
+          border-radius: 0;
+          cursor: zoom-in;
+        }
+        .project-gallery .project-card.is-active {
+          display: block;
+        }
+        .project-gallery .project-card img,
+        .project-gallery .project-card--wide img {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1.414 / 1;
+          object-fit: contain;
+          object-position: center;
+          transform: none;
+          filter: none;
+          background: var(--paper);
+        }
+        .project-gallery .project-card:hover img {
+          transform: none;
+          filter: none;
+        }
+        .project-gallery .project-card__meta {
+          display: none;
+        }
+        .project-gallery__arrow {
+          position: absolute;
+          top: 50%;
+          z-index: 4;
+          display: grid;
+          place-items: center;
+          width: clamp(48px, 4.6vw, 66px);
+          height: clamp(48px, 4.6vw, 66px);
+          padding: 0;
+          border: 1px solid rgba(255,255,255,.72);
+          border-radius: 50%;
+          color: #fff;
+          background: rgba(11,11,13,.58);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          font-size: clamp(22px, 2vw, 30px);
+          line-height: 1;
+          cursor: pointer;
+          transform: translateY(-50%);
+          transition: background .22s ease, color .22s ease, transform .22s ease;
+        }
+        .project-gallery__arrow:hover,
+        .project-gallery__arrow:focus-visible {
+          color: var(--ink);
+          background: #fff;
+          transform: translateY(-50%) scale(1.05);
+          outline: none;
+        }
+        .project-gallery__arrow--prev {
+          left: clamp(12px, 2vw, 28px);
+        }
+        .project-gallery__arrow--next {
+          right: clamp(12px, 2vw, 28px);
+        }
+        .project-gallery__footer {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 24px;
+          padding-top: 16px;
+        }
+        .project-gallery__title {
+          margin: 0;
+          font-family: var(--font-display);
+          font-size: clamp(20px, 2vw, 30px);
+          font-weight: 600;
+          line-height: 1.1;
+        }
+        .project-gallery__counter {
+          flex: 0 0 auto;
+          color: rgba(255,255,255,.64);
+          font-size: var(--small-size);
+          font-weight: 600;
+          letter-spacing: .1em;
+          text-transform: uppercase;
+        }
+        @media (max-width: 700px) {
+          .project-gallery + .project-gallery {
+            margin-top: 46px;
+          }
+          .project-gallery__viewport {
+            border-radius: 16px;
+          }
+          .project-gallery .project-card img,
+          .project-gallery .project-card--wide img {
+            aspect-ratio: 1.414 / 1;
+          }
+          .project-gallery__arrow {
+            width: 44px;
+            height: 44px;
+            font-size: 22px;
+          }
+          .project-gallery__arrow--prev {
+            left: 10px;
+          }
+          .project-gallery__arrow--next {
+            right: 10px;
+          }
+          .project-gallery__footer {
+            padding-top: 12px;
+          }
+          .project-gallery__title {
+            font-size: 20px;
+          }
+        }
+      `;
+      document.head.appendChild(galleryStyles);
+
+      const groups = [
+        { title: 'Bomb Coffee', cards: cards.slice(0, 3) },
+        { title: 'Музей Выксы', cards: cards.slice(3, 6) }
+      ];
+
+      projectGrid.innerHTML = '';
+
+      groups.forEach(({ title, cards: groupCards }) => {
+        const gallery = document.createElement('div');
+        gallery.className = 'project-gallery';
+        gallery.setAttribute('role', 'region');
+        gallery.setAttribute('aria-label', `Галерея проекта ${title}`);
+
+        const viewport = document.createElement('div');
+        viewport.className = 'project-gallery__viewport';
+
+        const prev = document.createElement('button');
+        prev.className = 'project-gallery__arrow project-gallery__arrow--prev';
+        prev.type = 'button';
+        prev.setAttribute('aria-label', `Предыдущее изображение проекта ${title}`);
+        prev.textContent = '←';
+
+        const next = document.createElement('button');
+        next.className = 'project-gallery__arrow project-gallery__arrow--next';
+        next.type = 'button';
+        next.setAttribute('aria-label', `Следующее изображение проекта ${title}`);
+        next.textContent = '→';
+
+        const footer = document.createElement('div');
+        footer.className = 'project-gallery__footer';
+
+        const heading = document.createElement('h3');
+        heading.className = 'project-gallery__title';
+        heading.textContent = title;
+
+        const counter = document.createElement('span');
+        counter.className = 'project-gallery__counter';
+
+        footer.append(heading, counter);
+
+        groupCards.forEach((card, index) => {
+          card.classList.remove('project-card--wide');
+          card.classList.add('project-gallery__slide');
+          card.classList.toggle('is-active', index === 0);
+          card.setAttribute('aria-hidden', index === 0 ? 'false' : 'true');
+          card.tabIndex = index === 0 ? 0 : -1;
+          viewport.appendChild(card);
+        });
+
+        viewport.append(prev, next);
+        gallery.append(viewport, footer);
+        projectGrid.appendChild(gallery);
+
+        let current = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        const showSlide = nextIndex => {
+          current = (nextIndex + groupCards.length) % groupCards.length;
+          groupCards.forEach((card, index) => {
+            const isActive = index === current;
+            card.classList.toggle('is-active', isActive);
+            card.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+            card.tabIndex = isActive ? 0 : -1;
+          });
+          counter.textContent = `${current + 1} / ${groupCards.length}`;
+        };
+
+        prev.addEventListener('click', event => {
+          event.stopPropagation();
+          showSlide(current - 1);
+        });
+
+        next.addEventListener('click', event => {
+          event.stopPropagation();
+          showSlide(current + 1);
+        });
+
+        gallery.addEventListener('keydown', event => {
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            showSlide(current - 1);
+          }
+          if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            showSlide(current + 1);
+          }
+        });
+
+        viewport.addEventListener('touchstart', event => {
+          if (event.touches.length !== 1) return;
+          touchStartX = event.touches[0].clientX;
+          touchStartY = event.touches[0].clientY;
+        }, { passive: true });
+
+        viewport.addEventListener('touchend', event => {
+          if (!event.changedTouches.length) return;
+          const dx = event.changedTouches[0].clientX - touchStartX;
+          const dy = event.changedTouches[0].clientY - touchStartY;
+          if (Math.abs(dx) < 45 || Math.abs(dx) <= Math.abs(dy)) return;
+          showSlide(current + (dx < 0 ? 1 : -1));
+        }, { passive: true });
+
+        showSlide(0);
+      });
+    }
+  }
+
   const dialog = document.querySelector('[data-lightbox-dialog]');
   const dialogImage = document.querySelector('[data-lightbox-image]');
   const closeButton = document.querySelector('[data-lightbox-close]');
