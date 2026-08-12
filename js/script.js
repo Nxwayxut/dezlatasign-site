@@ -117,15 +117,9 @@
     if (cards.length >= 6) {
       const galleryStyles = document.createElement('style');
       galleryStyles.textContent = `
-        .projects .project-grid {
-          display: block;
-        }
-        .project-gallery {
-          width: 100%;
-        }
-        .project-gallery + .project-gallery {
-          margin-top: clamp(40px, 6vw, 84px);
-        }
+        .projects .project-grid { display: block; }
+        .project-gallery { width: 100%; }
+        .project-gallery + .project-gallery { margin-top: clamp(40px, 6vw, 84px); }
         .project-gallery__viewport {
           position: relative;
           width: 100%;
@@ -139,9 +133,7 @@
           border-radius: 0;
           cursor: zoom-in;
         }
-        .project-gallery .project-card.is-active {
-          display: block;
-        }
+        .project-gallery .project-card.is-active { display: block; }
         .project-gallery .project-card img,
         .project-gallery .project-card--wide img {
           width: 100%;
@@ -157,9 +149,7 @@
           transform: none;
           filter: none;
         }
-        .project-gallery .project-card__meta {
-          display: none;
-        }
+        .project-gallery .project-card__meta { display: none; }
         .project-gallery__arrow {
           position: absolute;
           top: 50%;
@@ -188,12 +178,8 @@
           transform: translateY(-50%) scale(1.05);
           outline: none;
         }
-        .project-gallery__arrow--prev {
-          left: clamp(12px, 2vw, 28px);
-        }
-        .project-gallery__arrow--next {
-          right: clamp(12px, 2vw, 28px);
-        }
+        .project-gallery__arrow--prev { left: clamp(12px, 2vw, 28px); }
+        .project-gallery__arrow--next { right: clamp(12px, 2vw, 28px); }
         .project-gallery__footer {
           display: flex;
           align-items: baseline;
@@ -217,40 +203,47 @@
           text-transform: uppercase;
         }
         @media (max-width: 700px) {
-          .project-gallery + .project-gallery {
-            margin-top: 46px;
-          }
-          .project-gallery__viewport {
-            border-radius: 16px;
-          }
+          .project-gallery + .project-gallery { margin-top: 46px; }
+          .project-gallery__viewport { border-radius: 16px; }
           .project-gallery .project-card img,
-          .project-gallery .project-card--wide img {
-            aspect-ratio: 1.414 / 1;
-          }
+          .project-gallery .project-card--wide img { aspect-ratio: 1.414 / 1; }
           .project-gallery__arrow {
             width: 44px;
             height: 44px;
             font-size: 22px;
           }
-          .project-gallery__arrow--prev {
-            left: 10px;
-          }
-          .project-gallery__arrow--next {
-            right: 10px;
-          }
-          .project-gallery__footer {
-            padding-top: 12px;
-          }
-          .project-gallery__title {
-            font-size: 20px;
-          }
+          .project-gallery__arrow--prev { left: 10px; }
+          .project-gallery__arrow--next { right: 10px; }
+          .project-gallery__footer { padding-top: 12px; }
+          .project-gallery__title { font-size: 20px; }
         }
       `;
       document.head.appendChild(galleryStyles);
 
+      const bombCards = cards.slice(0, 3);
+      const museumCards = cards.slice(3, 6);
+
+      for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
+        const card = document.createElement('button');
+        card.className = 'project-card reveal is-visible';
+        card.type = 'button';
+        card.dataset.lightbox = `images/portfolio-${imageIndex}.webp`;
+        card.setAttribute('aria-label', `Открыть проект Bomb Coffee, изображение ${imageIndex}`);
+
+        const image = document.createElement('img');
+        image.src = `images/portfolio-${imageIndex}.webp`;
+        image.alt = `Bomb Coffee — изображение проекта ${imageIndex}`;
+        image.width = 2048;
+        image.height = 1448;
+        image.loading = 'lazy';
+
+        card.appendChild(image);
+        bombCards.push(card);
+      }
+
       const groups = [
-        { title: 'Bomb Coffee', cards: cards.slice(0, 3) },
-        { title: 'Музей Выксы', cards: cards.slice(3, 6) }
+        { title: 'Bomb Coffee', cards: bombCards },
+        { title: 'Музей Выксы', cards: museumCards }
       ];
 
       projectGrid.innerHTML = '';
@@ -430,14 +423,13 @@
     return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
   };
 
-  document.querySelectorAll('[data-lightbox]').forEach(button => {
-    button.addEventListener('click', () => {
-      if (!dialog || !dialogImage) return;
-      resetLightboxTransform();
-      dialogImage.src = button.dataset.lightbox;
-      setLightboxLock(true);
-      dialog.showModal();
-    });
+  document.addEventListener('click', event => {
+    const button = event.target.closest?.('[data-lightbox]');
+    if (!button || !dialog || !dialogImage) return;
+    resetLightboxTransform();
+    dialogImage.src = button.dataset.lightbox;
+    setLightboxLock(true);
+    dialog.showModal();
   });
 
   dialogImage?.addEventListener('wheel', event => {
