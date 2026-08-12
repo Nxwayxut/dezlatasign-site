@@ -1,0 +1,82 @@
+name: Rebuild Bomb Coffee assets
+
+on:
+  push:
+    branches:
+      - asset-repair-bomb
+    paths:
+      - '.asset-repair/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: asset-repair-bomb
+          fetch-depth: 0
+
+      - name: Rebuild images and update main
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bomb-assets
+
+          for i in 1 2 3 4 5 6; do
+            cat .asset-repair/portfolio-${i}.part-* | tr -d '\r\n' | base64 -d > /tmp/bomb-assets/bomb-coffee-${i}.webp
+            python3 - "$i" <<'PY'
+          from pathlib import Path
+          import sys
+          p = Path(f"/tmp/bomb-assets/bomb-coffee-{sys.argv[1]}.webp")
+          data = p.read_bytes()
+          if not (data[:4] == b"RIFF" and data[8:12] == b"WEBP"):
+              raise SystemExit(f"Invalid WebP: {p}")
+          print(p.name, len(data))
+          PY
+          done
+
+          git fetch origin main
+          git checkout -B main origin/main
+          cp /tmp/bomb-assets/bomb-coffee-*.webp images/
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          for i in range(1, 4):
+              s = s.replace(f'images/portfolio-{i}.webp', f'images/bomb-coffee-{i}.webp')
+          s = s.replace('js/script.js?v=30', 'js/script.js?v=32')
+          s = s.replace('js/script.js?v=31', 'js/script.js?v=32')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('works/index.html')
+          s = p.read_text(encoding='utf-8')
+          for i in range(1, 4):
+              s = s.replace(f'../images/portfolio-{i}.webp', f'../images/bomb-coffee-{i}.webp')
+          s = s.replace('../js/script.js?v=30', '../js/script.js?v=32')
+          s = s.replace('../js/script.js?v=31', '../js/script.js?v=32')
+          s = s.replace('../js/works.js?v=23', '../js/works.js?v=25')
+          s = s.replace('../js/works.js?v=24', '../js/works.js?v=25')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('js/script.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('images/portfolio-${imageIndex}.webp', 'images/bomb-coffee-${imageIndex}.webp')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('js/works.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('../images/portfolio-${imageIndex}.webp', '../images/bomb-coffee-${imageIndex}.webp')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add images/bomb-coffee-*.webp index.html works/index.html js/script.js js/works.js
+          git commit -m "Fix Bomb Coffee image assets"
+          git push origin main
