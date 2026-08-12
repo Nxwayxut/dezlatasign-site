@@ -6,8 +6,24 @@
 
   const bombTrack = bombGallery?.querySelector('[data-gallery-track]');
   if (bombTrack) {
+    const existingSlides = [...bombTrack.querySelectorAll('.gallery-card__slide')];
+
+    existingSlides.slice(0, 3).forEach((slide, index) => {
+      const imageNumber = index + 1;
+      const src = `../images/bomb-coffee-0${imageNumber}.webp`;
+      slide.dataset.lightbox = src;
+      slide.setAttribute('aria-label', `Открыть Bomb Coffee, изображение ${imageNumber}`);
+      const image = slide.querySelector('img');
+      if (image) {
+        image.src = src;
+        image.alt = `Bomb Coffee — изображение проекта ${imageNumber}`;
+        image.width = 1800;
+        image.height = 1273;
+      }
+    });
+
     for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
-      const src = `../images/portfolio-${imageIndex}.webp`;
+      const src = `../images/bomb-coffee-0${imageIndex}.webp`;
       if (bombTrack.querySelector(`[data-lightbox="${src}"]`)) continue;
 
       const slide = document.createElement('button');
@@ -19,8 +35,8 @@
       const image = document.createElement('img');
       image.src = src;
       image.alt = `Bomb Coffee — изображение проекта ${imageIndex}`;
-      image.width = 2048;
-      image.height = 1448;
+      image.width = 1800;
+      image.height = 1273;
       image.loading = 'lazy';
 
       slide.appendChild(image);
@@ -43,6 +59,7 @@
     let pointerStartX = null;
 
     if (totalLabel) totalLabel.textContent = String(slides.length);
+    if (dotsContainer) dotsContainer.innerHTML = '';
 
     const dots = slides.map((_, dotIndex) => {
       const dot = document.createElement('button');
