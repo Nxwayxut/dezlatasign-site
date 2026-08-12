@@ -1,4 +1,33 @@
 (() => {
+  const bombGallery = [...document.querySelectorAll('[data-gallery]')].find(gallery => {
+    const title = gallery.querySelector('h3')?.textContent?.trim();
+    return title === 'Bomb Coffee';
+  });
+
+  const bombTrack = bombGallery?.querySelector('[data-gallery-track]');
+  if (bombTrack) {
+    for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
+      const src = `../images/portfolio-${imageIndex}.webp`;
+      if (bombTrack.querySelector(`[data-lightbox="${src}"]`)) continue;
+
+      const slide = document.createElement('button');
+      slide.className = 'gallery-card__slide';
+      slide.type = 'button';
+      slide.dataset.lightbox = src;
+      slide.setAttribute('aria-label', `Открыть Bomb Coffee, изображение ${imageIndex}`);
+
+      const image = document.createElement('img');
+      image.src = src;
+      image.alt = `Bomb Coffee — изображение проекта ${imageIndex}`;
+      image.width = 2048;
+      image.height = 1448;
+      image.loading = 'lazy';
+
+      slide.appendChild(image);
+      bombTrack.appendChild(slide);
+    }
+  }
+
   document.querySelectorAll('[data-gallery]').forEach(gallery => {
     const track = gallery.querySelector('[data-gallery-track]');
     const viewport = gallery.querySelector('[data-gallery-viewport]');
