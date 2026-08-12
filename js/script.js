@@ -120,98 +120,27 @@
         .projects .project-grid { display: block; }
         .project-gallery { width: 100%; }
         .project-gallery + .project-gallery { margin-top: clamp(40px, 6vw, 84px); }
-        .project-gallery__viewport {
-          position: relative;
-          width: 100%;
-          overflow: hidden;
-          border-radius: var(--radius);
-          background: var(--paper);
-        }
-        .project-gallery .project-card {
-          display: none;
-          width: 100%;
-          border-radius: 0;
-          cursor: zoom-in;
-        }
+        .project-gallery__viewport { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius); background: var(--paper); }
+        .project-gallery .project-card { display: none; width: 100%; border-radius: 0; cursor: zoom-in; }
         .project-gallery .project-card.is-active { display: block; }
         .project-gallery .project-card img,
-        .project-gallery .project-card--wide img {
-          width: 100%;
-          height: auto;
-          aspect-ratio: 1.414 / 1;
-          object-fit: contain;
-          object-position: center;
-          transform: none;
-          filter: none;
-          background: var(--paper);
-        }
-        .project-gallery .project-card:hover img {
-          transform: none;
-          filter: none;
-        }
+        .project-gallery .project-card--wide img { width: 100%; height: auto; aspect-ratio: 1.414 / 1; object-fit: contain; object-position: center; transform: none; filter: none; background: var(--paper); }
+        .project-gallery .project-card:hover img { transform: none; filter: none; }
         .project-gallery .project-card__meta { display: none; }
-        .project-gallery__arrow {
-          position: absolute;
-          top: 50%;
-          z-index: 4;
-          display: grid;
-          place-items: center;
-          width: clamp(48px, 4.6vw, 66px);
-          height: clamp(48px, 4.6vw, 66px);
-          padding: 0;
-          border: 1px solid rgba(255,255,255,.72);
-          border-radius: 50%;
-          color: #fff;
-          background: rgba(11,11,13,.58);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          font-size: clamp(22px, 2vw, 30px);
-          line-height: 1;
-          cursor: pointer;
-          transform: translateY(-50%);
-          transition: background .22s ease, color .22s ease, transform .22s ease;
-        }
+        .project-gallery__arrow { position: absolute; top: 50%; z-index: 4; display: grid; place-items: center; width: clamp(48px, 4.6vw, 66px); height: clamp(48px, 4.6vw, 66px); padding: 0; border: 1px solid rgba(255,255,255,.72); border-radius: 50%; color: #fff; background: rgba(11,11,13,.58); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: clamp(22px, 2vw, 30px); line-height: 1; cursor: pointer; transform: translateY(-50%); transition: background .22s ease, color .22s ease, transform .22s ease; }
         .project-gallery__arrow:hover,
-        .project-gallery__arrow:focus-visible {
-          color: var(--ink);
-          background: #fff;
-          transform: translateY(-50%) scale(1.05);
-          outline: none;
-        }
+        .project-gallery__arrow:focus-visible { color: var(--ink); background: #fff; transform: translateY(-50%) scale(1.05); outline: none; }
         .project-gallery__arrow--prev { left: clamp(12px, 2vw, 28px); }
         .project-gallery__arrow--next { right: clamp(12px, 2vw, 28px); }
-        .project-gallery__footer {
-          display: flex;
-          align-items: baseline;
-          justify-content: space-between;
-          gap: 24px;
-          padding-top: 16px;
-        }
-        .project-gallery__title {
-          margin: 0;
-          font-family: var(--font-display);
-          font-size: clamp(20px, 2vw, 30px);
-          font-weight: 600;
-          line-height: 1.1;
-        }
-        .project-gallery__counter {
-          flex: 0 0 auto;
-          color: rgba(255,255,255,.64);
-          font-size: var(--small-size);
-          font-weight: 600;
-          letter-spacing: .1em;
-          text-transform: uppercase;
-        }
+        .project-gallery__footer { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-top: 16px; }
+        .project-gallery__title { margin: 0; font-family: var(--font-display); font-size: clamp(20px, 2vw, 30px); font-weight: 600; line-height: 1.1; }
+        .project-gallery__counter { flex: 0 0 auto; color: rgba(255,255,255,.64); font-size: var(--small-size); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
         @media (max-width: 700px) {
           .project-gallery + .project-gallery { margin-top: 46px; }
           .project-gallery__viewport { border-radius: 16px; }
           .project-gallery .project-card img,
           .project-gallery .project-card--wide img { aspect-ratio: 1.414 / 1; }
-          .project-gallery__arrow {
-            width: 44px;
-            height: 44px;
-            font-size: 22px;
-          }
+          .project-gallery__arrow { width: 44px; height: 44px; font-size: 22px; }
           .project-gallery__arrow--prev { left: 10px; }
           .project-gallery__arrow--next { right: 10px; }
           .project-gallery__footer { padding-top: 12px; }
@@ -223,18 +152,33 @@
       const bombCards = cards.slice(0, 3);
       const museumCards = cards.slice(3, 6);
 
+      bombCards.forEach((card, index) => {
+        const imageNumber = index + 1;
+        const src = `images/bomb-coffee-0${imageNumber}.webp`;
+        card.dataset.lightbox = src;
+        card.setAttribute('aria-label', `Открыть проект Bomb Coffee, изображение ${imageNumber}`);
+        const image = card.querySelector('img');
+        if (image) {
+          image.src = src;
+          image.alt = `Bomb Coffee — изображение проекта ${imageNumber}`;
+          image.width = 1800;
+          image.height = 1273;
+        }
+      });
+
       for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
+        const src = `images/bomb-coffee-0${imageIndex}.webp`;
         const card = document.createElement('button');
         card.className = 'project-card reveal is-visible';
         card.type = 'button';
-        card.dataset.lightbox = `images/portfolio-${imageIndex}.webp`;
+        card.dataset.lightbox = src;
         card.setAttribute('aria-label', `Открыть проект Bomb Coffee, изображение ${imageIndex}`);
 
         const image = document.createElement('img');
-        image.src = `images/portfolio-${imageIndex}.webp`;
+        image.src = src;
         image.alt = `Bomb Coffee — изображение проекта ${imageIndex}`;
-        image.width = 2048;
-        image.height = 1448;
+        image.width = 1800;
+        image.height = 1273;
         image.loading = 'lazy';
 
         card.appendChild(image);
@@ -278,7 +222,6 @@
 
         const counter = document.createElement('span');
         counter.className = 'project-gallery__counter';
-
         footer.append(heading, counter);
 
         groupCards.forEach((card, index) => {
@@ -301,10 +244,10 @@
         const showSlide = nextIndex => {
           current = (nextIndex + groupCards.length) % groupCards.length;
           groupCards.forEach((card, index) => {
-            const isActive = index === current;
-            card.classList.toggle('is-active', isActive);
-            card.setAttribute('aria-hidden', isActive ? 'false' : 'true');
-            card.tabIndex = isActive ? 0 : -1;
+            const active = index === current;
+            card.classList.toggle('is-active', active);
+            card.setAttribute('aria-hidden', active ? 'false' : 'true');
+            card.tabIndex = active ? 0 : -1;
           });
           counter.textContent = `${current + 1} / ${groupCards.length}`;
         };
@@ -313,7 +256,6 @@
           event.stopPropagation();
           showSlide(current - 1);
         });
-
         next.addEventListener('click', event => {
           event.stopPropagation();
           showSlide(current + 1);
@@ -463,18 +405,13 @@
   dialogImage?.addEventListener('pointermove', event => {
     if (!activePointers.has(event.pointerId)) return;
     event.preventDefault();
-
     const previous = activePointers.get(event.pointerId);
-    if (Math.abs(event.clientX - previous.x) > 2 || Math.abs(event.clientY - previous.y) > 2) {
-      pointerMoved = true;
-    }
+    if (Math.abs(event.clientX - previous.x) > 2 || Math.abs(event.clientY - previous.y) > 2) pointerMoved = true;
     activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
 
     if (activePointers.size >= 2) {
       const distance = getPointerDistance();
-      if (pinchStartDistance > 0) {
-        setLightboxScale(pinchStartScale * (distance / pinchStartDistance));
-      }
+      if (pinchStartDistance > 0) setLightboxScale(pinchStartScale * (distance / pinchStartDistance));
       return;
     }
 
@@ -483,7 +420,6 @@
       lightboxY += event.clientY - lastPointerY;
       applyLightboxTransform();
     }
-
     lastPointerX = event.clientX;
     lastPointerY = event.clientY;
   });
