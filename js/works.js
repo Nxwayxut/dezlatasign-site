@@ -1,48 +1,51 @@
 (() => {
-  const bombGallery = [...document.querySelectorAll('[data-gallery]')].find(gallery => {
-    const title = gallery.querySelector('h3')?.textContent?.trim();
-    return title === 'Bomb Coffee';
-  });
+  const hydrateGallery = ({ title, slug, width, height }) => {
+    const gallery = [...document.querySelectorAll('[data-gallery]')].find(item => {
+      return item.querySelector('h3')?.textContent?.trim() === title;
+    });
+    const track = gallery?.querySelector('[data-gallery-track]');
+    if (!track) return;
 
-  const bombTrack = bombGallery?.querySelector('[data-gallery-track]');
-  if (bombTrack) {
-    const existingSlides = [...bombTrack.querySelectorAll('.gallery-card__slide')];
+    const existingSlides = [...track.querySelectorAll('.gallery-card__slide')];
 
     existingSlides.slice(0, 3).forEach((slide, index) => {
       const imageNumber = index + 1;
-      const src = `../images/bomb-coffee-0${imageNumber}.webp`;
+      const src = `../images/${slug}-0${imageNumber}.webp`;
       slide.dataset.lightbox = src;
-      slide.setAttribute('aria-label', `Открыть Bomb Coffee, изображение ${imageNumber}`);
+      slide.setAttribute('aria-label', `Открыть ${title}, изображение ${imageNumber}`);
       const image = slide.querySelector('img');
       if (image) {
         image.src = src;
-        image.alt = `Bomb Coffee — изображение проекта ${imageNumber}`;
-        image.width = 1800;
-        image.height = 1273;
+        image.alt = `${title} — изображение проекта ${imageNumber}`;
+        image.width = width;
+        image.height = height;
       }
     });
 
     for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
-      const src = `../images/bomb-coffee-0${imageIndex}.webp`;
-      if (bombTrack.querySelector(`[data-lightbox="${src}"]`)) continue;
+      const src = `../images/${slug}-0${imageIndex}.webp`;
+      if (track.querySelector(`[data-lightbox="${src}"]`)) continue;
 
       const slide = document.createElement('button');
       slide.className = 'gallery-card__slide';
       slide.type = 'button';
       slide.dataset.lightbox = src;
-      slide.setAttribute('aria-label', `Открыть Bomb Coffee, изображение ${imageIndex}`);
+      slide.setAttribute('aria-label', `Открыть ${title}, изображение ${imageIndex}`);
 
       const image = document.createElement('img');
       image.src = src;
-      image.alt = `Bomb Coffee — изображение проекта ${imageIndex}`;
-      image.width = 1800;
-      image.height = 1273;
+      image.alt = `${title} — изображение проекта ${imageIndex}`;
+      image.width = width;
+      image.height = height;
       image.loading = 'lazy';
 
       slide.appendChild(image);
-      bombTrack.appendChild(slide);
+      track.appendChild(slide);
     }
-  }
+  };
+
+  hydrateGallery({ title: 'Bomb Coffee', slug: 'bomb-coffee', width: 1800, height: 1273 });
+  hydrateGallery({ title: 'Музей Выксы', slug: 'museum-vyksa', width: 1600, height: 1131 });
 
   document.querySelectorAll('[data-gallery]').forEach(gallery => {
     const track = gallery.querySelector('[data-gallery-track]');
