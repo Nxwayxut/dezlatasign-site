@@ -1,16 +1,64 @@
 (() => {
-  const hydrateGallery = ({ title, slug, width, height }) => {
-    const gallery = [...document.querySelectorAll('[data-gallery]')].find(item => {
-      return item.querySelector('h3')?.textContent?.trim() === title;
-    });
+  const findGallery = title => [...document.querySelectorAll('[data-gallery]')].find(item => {
+    return item.querySelector('h3')?.textContent?.trim() === title;
+  });
+
+  const featuredProjects = document.querySelector('#identity .featured-projects');
+
+  if (featuredProjects && !findGallery('Прудыкс')) {
+    const prudyksGallery = document.createElement('article');
+    prudyksGallery.className = 'gallery-card reveal';
+    prudyksGallery.dataset.gallery = '';
+    prudyksGallery.innerHTML = `
+      <div class="gallery-card__viewport" data-gallery-viewport>
+        <div class="gallery-card__track" data-gallery-track>
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/prudyks-01.webp" aria-label="Увеличить первое изображение проекта Прудыкс">
+            <img src="../images/prudyks-01.webp" alt="Прудыкс — айдентика Верхнего пруда Выксы" width="842" height="595" loading="lazy">
+          </button>
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/prudyks-02.webp" aria-label="Увеличить второе изображение проекта Прудыкс">
+            <img src="../images/prudyks-02.webp" alt="Прудыкс — логотип и концепция айдентики" width="842" height="595" loading="lazy">
+          </button>
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/prudyks-03.webp" aria-label="Увеличить третье изображение проекта Прудыкс">
+            <img src="../images/prudyks-03.webp" alt="Прудыкс — визуальная система проекта" width="842" height="595" loading="lazy">
+          </button>
+        </div>
+        <button class="gallery-card__arrow gallery-card__arrow--prev" type="button" data-gallery-prev aria-label="Предыдущее изображение">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button class="gallery-card__arrow gallery-card__arrow--next" type="button" data-gallery-next aria-label="Следующее изображение">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="gallery-card__counter" aria-live="polite"><span data-gallery-current>1</span> / <span data-gallery-total>7</span></div>
+      </div>
+      <div class="gallery-card__caption">
+        <div><span>Айдентика · городской концепт</span><h3>Прудыкс</h3></div>
+        <p>Концепт айдентики Верхнего пруда Выксы</p>
+      </div>
+      <div class="gallery-card__dots" data-gallery-dots aria-label="Навигация по изображениям"></div>
+    `;
+
+    const bombGallery = findGallery('Bomb Coffee');
+    const museumGallery = findGallery('Музей Выксы');
+
+    if (bombGallery) featuredProjects.appendChild(bombGallery);
+    featuredProjects.appendChild(prudyksGallery);
+    if (museumGallery) featuredProjects.appendChild(museumGallery);
+  }
+
+  const hydrateGallery = ({ title, slug, width, height, total }) => {
+    const gallery = findGallery(title);
     const track = gallery?.querySelector('[data-gallery-track]');
     if (!track) return;
 
     const existingSlides = [...track.querySelectorAll('.gallery-card__slide')];
 
-    existingSlides.slice(0, 3).forEach((slide, index) => {
+    existingSlides.forEach((slide, index) => {
       const imageNumber = index + 1;
-      const src = `../images/${slug}-0${imageNumber}.webp`;
+      if (imageNumber > total) {
+        slide.remove();
+        return;
+      }
+      const src = `../images/${slug}-${String(imageNumber).padStart(2, '0')}.webp`;
       slide.dataset.lightbox = src;
       slide.setAttribute('aria-label', `Открыть ${title}, изображение ${imageNumber}`);
       const image = slide.querySelector('img');
@@ -22,9 +70,9 @@
       }
     });
 
-    for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
-      const src = `../images/${slug}-0${imageIndex}.webp`;
-      if (track.querySelector(`[data-lightbox="${src}"]`)) continue;
+    const currentSlides = [...track.querySelectorAll('.gallery-card__slide')];
+    for (let imageIndex = currentSlides.length + 1; imageIndex <= total; imageIndex += 1) {
+      const src = `../images/${slug}-${String(imageIndex).padStart(2, '0')}.webp`;
 
       const slide = document.createElement('button');
       slide.className = 'gallery-card__slide';
@@ -44,8 +92,9 @@
     }
   };
 
-  hydrateGallery({ title: 'Bomb Coffee', slug: 'bomb-coffee', width: 1800, height: 1273 });
-  hydrateGallery({ title: 'Музей Выксы', slug: 'museum-vyksa', width: 1600, height: 1131 });
+  hydrateGallery({ title: 'Bomb Coffee', slug: 'bomb-coffee', width: 1800, height: 1273, total: 6 });
+  hydrateGallery({ title: 'Прудыкс', slug: 'prudyks', width: 842, height: 595, total: 7 });
+  hydrateGallery({ title: 'Музей Выксы', slug: 'museum-vyksa', width: 1600, height: 1131, total: 6 });
 
   document.querySelectorAll('[data-gallery]').forEach(gallery => {
     const track = gallery.querySelector('[data-gallery-track]');
