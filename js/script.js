@@ -132,8 +132,10 @@
         .project-gallery__arrow:focus-visible { color: var(--ink); background: #fff; transform: translateY(-50%) scale(1.05); outline: none; }
         .project-gallery__arrow--prev { left: clamp(12px, 2vw, 28px); }
         .project-gallery__arrow--next { right: clamp(12px, 2vw, 28px); }
-        .project-gallery__footer { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-top: 16px; }
+        .project-gallery__footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding-top: 16px; }
+        .project-gallery__info { display: grid; gap: 6px; min-width: 0; }
         .project-gallery__title { margin: 0; font-family: var(--font-display); font-size: clamp(20px, 2vw, 30px); font-weight: 600; line-height: 1.1; }
+        .project-gallery__description { margin: 0; color: rgba(255,255,255,.62); font-size: clamp(13px, 1.25vw, 16px); line-height: 1.45; }
         .project-gallery__counter { flex: 0 0 auto; color: rgba(255,255,255,.64); font-size: var(--small-size); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
         @media (max-width: 700px) {
           .project-gallery + .project-gallery { margin-top: 46px; }
@@ -143,19 +145,21 @@
           .project-gallery__arrow { width: 44px; height: 44px; font-size: 22px; }
           .project-gallery__arrow--prev { left: 10px; }
           .project-gallery__arrow--next { right: 10px; }
-          .project-gallery__footer { padding-top: 12px; }
+          .project-gallery__footer { padding-top: 12px; gap: 16px; }
           .project-gallery__title { font-size: 20px; }
+          .project-gallery__description { font-size: 13px; }
         }
       `;
       document.head.appendChild(galleryStyles);
 
       const bombCards = cards.slice(0, 3);
       const museumCards = cards.slice(3, 6);
+      const prudyksCards = [];
 
-      const hydrateProjectCards = ({ projectCards, title, slug, width, height }) => {
+      const hydrateProjectCards = ({ projectCards, title, slug, width, height, total }) => {
         projectCards.forEach((card, index) => {
           const imageNumber = index + 1;
-          const src = `images/${slug}-0${imageNumber}.webp`;
+          const src = `images/${slug}-${String(imageNumber).padStart(2, '0')}.webp`;
           card.dataset.lightbox = src;
           card.setAttribute('aria-label', `Открыть проект ${title}, изображение ${imageNumber}`);
           const image = card.querySelector('img');
@@ -167,8 +171,8 @@
           }
         });
 
-        for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
-          const src = `images/${slug}-0${imageIndex}.webp`;
+        for (let imageIndex = projectCards.length + 1; imageIndex <= total; imageIndex += 1) {
+          const src = `images/${slug}-${String(imageIndex).padStart(2, '0')}.webp`;
           const card = document.createElement('button');
           card.className = 'project-card reveal is-visible';
           card.type = 'button';
@@ -187,17 +191,19 @@
         }
       };
 
-      hydrateProjectCards({ projectCards: bombCards, title: 'Bomb Coffee', slug: 'bomb-coffee', width: 1800, height: 1273 });
-      hydrateProjectCards({ projectCards: museumCards, title: 'Музей Выксы', slug: 'museum-vyksa', width: 1600, height: 1131 });
+      hydrateProjectCards({ projectCards: bombCards, title: 'Bomb Coffee', slug: 'bomb-coffee', width: 1800, height: 1273, total: 6 });
+      hydrateProjectCards({ projectCards: prudyksCards, title: 'Прудыкс', slug: 'prudyks', width: 842, height: 595, total: 7 });
+      hydrateProjectCards({ projectCards: museumCards, title: 'Музей Выксы', slug: 'museum-vyksa', width: 1600, height: 1131, total: 6 });
 
       const groups = [
         { title: 'Bomb Coffee', cards: bombCards },
+        { title: 'Прудыкс', description: 'Концепт айдентики Верхнего пруда Выксы', cards: prudyksCards },
         { title: 'Музей Выксы', cards: museumCards }
       ];
 
       projectGrid.innerHTML = '';
 
-      groups.forEach(({ title, cards: groupCards }) => {
+      groups.forEach(({ title, description, cards: groupCards }) => {
         const gallery = document.createElement('div');
         gallery.className = 'project-gallery';
         gallery.setAttribute('role', 'region');
@@ -221,13 +227,24 @@
         const footer = document.createElement('div');
         footer.className = 'project-gallery__footer';
 
+        const info = document.createElement('div');
+        info.className = 'project-gallery__info';
+
         const heading = document.createElement('h3');
         heading.className = 'project-gallery__title';
         heading.textContent = title;
+        info.appendChild(heading);
+
+        if (description) {
+          const descriptionElement = document.createElement('p');
+          descriptionElement.className = 'project-gallery__description';
+          descriptionElement.textContent = description;
+          info.appendChild(descriptionElement);
+        }
 
         const counter = document.createElement('span');
         counter.className = 'project-gallery__counter';
-        footer.append(heading, counter);
+        footer.append(info, counter);
 
         groupCards.forEach((card, index) => {
           card.classList.remove('project-card--wide');
