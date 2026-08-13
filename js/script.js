@@ -152,38 +152,43 @@
       const bombCards = cards.slice(0, 3);
       const museumCards = cards.slice(3, 6);
 
-      bombCards.forEach((card, index) => {
-        const imageNumber = index + 1;
-        const src = `images/bomb-coffee-0${imageNumber}.webp`;
-        card.dataset.lightbox = src;
-        card.setAttribute('aria-label', `Открыть проект Bomb Coffee, изображение ${imageNumber}`);
-        const image = card.querySelector('img');
-        if (image) {
+      const hydrateProjectCards = ({ projectCards, title, slug, width, height }) => {
+        projectCards.forEach((card, index) => {
+          const imageNumber = index + 1;
+          const src = `images/${slug}-0${imageNumber}.webp`;
+          card.dataset.lightbox = src;
+          card.setAttribute('aria-label', `Открыть проект ${title}, изображение ${imageNumber}`);
+          const image = card.querySelector('img');
+          if (image) {
+            image.src = src;
+            image.alt = `${title} — изображение проекта ${imageNumber}`;
+            image.width = width;
+            image.height = height;
+          }
+        });
+
+        for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
+          const src = `images/${slug}-0${imageIndex}.webp`;
+          const card = document.createElement('button');
+          card.className = 'project-card reveal is-visible';
+          card.type = 'button';
+          card.dataset.lightbox = src;
+          card.setAttribute('aria-label', `Открыть проект ${title}, изображение ${imageIndex}`);
+
+          const image = document.createElement('img');
           image.src = src;
-          image.alt = `Bomb Coffee — изображение проекта ${imageNumber}`;
-          image.width = 1800;
-          image.height = 1273;
+          image.alt = `${title} — изображение проекта ${imageIndex}`;
+          image.width = width;
+          image.height = height;
+          image.loading = 'lazy';
+
+          card.appendChild(image);
+          projectCards.push(card);
         }
-      });
+      };
 
-      for (let imageIndex = 4; imageIndex <= 6; imageIndex += 1) {
-        const src = `images/bomb-coffee-0${imageIndex}.webp`;
-        const card = document.createElement('button');
-        card.className = 'project-card reveal is-visible';
-        card.type = 'button';
-        card.dataset.lightbox = src;
-        card.setAttribute('aria-label', `Открыть проект Bomb Coffee, изображение ${imageIndex}`);
-
-        const image = document.createElement('img');
-        image.src = src;
-        image.alt = `Bomb Coffee — изображение проекта ${imageIndex}`;
-        image.width = 1800;
-        image.height = 1273;
-        image.loading = 'lazy';
-
-        card.appendChild(image);
-        bombCards.push(card);
-      }
+      hydrateProjectCards({ projectCards: bombCards, title: 'Bomb Coffee', slug: 'bomb-coffee', width: 1800, height: 1273 });
+      hydrateProjectCards({ projectCards: museumCards, title: 'Музей Выксы', slug: 'museum-vyksa', width: 1600, height: 1131 });
 
       const groups = [
         { title: 'Bomb Coffee', cards: bombCards },
