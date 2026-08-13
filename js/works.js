@@ -7,7 +7,7 @@
 
   if (featuredProjects && !findGallery('Прудыкс')) {
     const prudyksGallery = document.createElement('article');
-    prudyksGallery.className = 'gallery-card reveal';
+    prudyksGallery.className = 'gallery-card reveal is-visible';
     prudyksGallery.dataset.gallery = '';
     prudyksGallery.innerHTML = `
       <div class="gallery-card__viewport" data-gallery-viewport>
