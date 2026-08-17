@@ -45,6 +45,41 @@
     if (museumGallery) featuredProjects.appendChild(museumGallery);
   }
 
+  const merchSection = document.querySelector('#merch');
+  if (merchSection && !merchSection.querySelector('[data-gallery]')) {
+    const placeholder = merchSection.querySelector('.empty-category');
+    const merchGallery = document.createElement('article');
+    merchGallery.className = 'gallery-card gallery-card--merch reveal is-visible';
+    merchGallery.dataset.gallery = '';
+    merchGallery.innerHTML = `
+      <div class="gallery-card__viewport" data-gallery-viewport>
+        <div class="gallery-card__track" data-gallery-track>
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/ples-open-merch-01.webp" aria-label="Увеличить первое изображение проекта Ples Open 2026">
+            <img src="../images/ples-open-merch-01.webp" alt="Призовая футболка Ples Open 2026 с авторским принтом" width="1600" height="1130" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
+          </button>
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/ples-open-merch-02.webp" aria-label="Увеличить второе изображение проекта Ples Open 2026">
+            <img src="../images/ples-open-merch-02.webp" alt="Футболка Ples Open 2026 на модели" width="1600" height="1130" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
+          </button>
+        </div>
+        <button class="gallery-card__arrow gallery-card__arrow--prev" type="button" data-gallery-prev aria-label="Предыдущее изображение">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button class="gallery-card__arrow gallery-card__arrow--next" type="button" data-gallery-next aria-label="Следующее изображение">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="gallery-card__counter" aria-live="polite"><span data-gallery-current>1</span> / <span data-gallery-total>2</span></div>
+      </div>
+      <div class="gallery-card__caption">
+        <div><span>Мерч · баскетбольный турнир</span><h3>Ples Open 2026</h3></div>
+        <p>Принт для призовых футболок баскетбольного турнира</p>
+      </div>
+      <div class="gallery-card__dots" data-gallery-dots aria-label="Навигация по изображениям"></div>
+    `;
+
+    if (placeholder) placeholder.replaceWith(merchGallery);
+    else merchSection.appendChild(merchGallery);
+  }
+
   const hydrateGallery = ({ title, slug, width, height, total }) => {
     const gallery = findGallery(title);
     const track = gallery?.querySelector('[data-gallery-track]');
