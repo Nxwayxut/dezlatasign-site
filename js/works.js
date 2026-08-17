@@ -12,22 +12,14 @@
     prudyksGallery.innerHTML = `
       <div class="gallery-card__viewport" data-gallery-viewport>
         <div class="gallery-card__track" data-gallery-track>
-          <button class="gallery-card__slide" type="button" data-lightbox="../images/prudyks-01.webp" aria-label="Увеличить первое изображение проекта Прудыкс">
-            <img src="../images/prudyks-01.webp" alt="Прудыкс — айдентика Верхнего пруда Выксы" width="842" height="595" loading="lazy">
-          </button>
-          <button class="gallery-card__slide" type="button" data-lightbox="../images/prudyks-02.webp" aria-label="Увеличить второе изображение проекта Прудыкс">
-            <img src="../images/prudyks-02.webp" alt="Прудыкс — логотип и концепция айдентики" width="842" height="595" loading="lazy">
-          </button>
-          <button class="gallery-card__slide" type="button" data-lightbox="../images/prudyks-03.webp" aria-label="Увеличить третье изображение проекта Прудыкс">
-            <img src="../images/prudyks-03.webp" alt="Прудыкс — визуальная система проекта" width="842" height="595" loading="lazy">
-          </button>
+          ${Array.from({ length: 7 }, (_, i) => {
+            const n = i + 1;
+            const src = `../images/prudyks-${String(n).padStart(2, '0')}.webp`;
+            return `<button class="gallery-card__slide" type="button" data-lightbox="${src}" aria-label="Увеличить изображение ${n} проекта Прудыкс"><img src="${src}" alt="Прудыкс — изображение проекта ${n}" width="842" height="595" loading="lazy"></button>`;
+          }).join('')}
         </div>
-        <button class="gallery-card__arrow gallery-card__arrow--prev" type="button" data-gallery-prev aria-label="Предыдущее изображение">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-        <button class="gallery-card__arrow gallery-card__arrow--next" type="button" data-gallery-next aria-label="Следующее изображение">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
+        <button class="gallery-card__arrow gallery-card__arrow--prev" type="button" data-gallery-prev aria-label="Предыдущее изображение"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <button class="gallery-card__arrow gallery-card__arrow--next" type="button" data-gallery-next aria-label="Следующее изображение"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         <div class="gallery-card__counter" aria-live="polite"><span data-gallery-current>1</span> / <span data-gallery-total>7</span></div>
       </div>
       <div class="gallery-card__caption">
@@ -39,46 +31,68 @@
 
     const bombGallery = findGallery('Bomb Coffee');
     const museumGallery = findGallery('Музей Выксы');
-
     if (bombGallery) featuredProjects.appendChild(bombGallery);
     featuredProjects.appendChild(prudyksGallery);
     if (museumGallery) featuredProjects.appendChild(museumGallery);
   }
 
-  const merchSection = document.querySelector('#merch');
-  if (merchSection && !merchSection.querySelector('[data-gallery]')) {
-    const placeholder = merchSection.querySelector('.empty-category');
-    const merchGallery = document.createElement('article');
-    merchGallery.className = 'gallery-card gallery-card--merch reveal is-visible';
-    merchGallery.dataset.gallery = '';
-    merchGallery.innerHTML = `
+  const ensureSectionGallery = ({ sectionId, title, eyebrow, description, slug, total, width, height }) => {
+    const section = document.querySelector(`#${sectionId}`);
+    if (!section || section.querySelector('[data-gallery]')) return;
+
+    const placeholder = section.querySelector('.empty-category');
+    const gallery = document.createElement('article');
+    gallery.className = 'gallery-card gallery-card--natural reveal is-visible';
+    gallery.dataset.gallery = '';
+
+    const slides = Array.from({ length: total }, (_, i) => {
+      const n = i + 1;
+      const src = `../images/${slug}-${String(n).padStart(2, '0')}.webp`;
+      return `
+        <button class="gallery-card__slide" type="button" data-lightbox="${src}" aria-label="Увеличить изображение ${n} проекта ${title}">
+          <img src="${src}" alt="${description} — изображение ${n}" width="${width}" height="${height}" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
+        </button>`;
+    }).join('');
+
+    gallery.innerHTML = `
       <div class="gallery-card__viewport" data-gallery-viewport>
-        <div class="gallery-card__track" data-gallery-track>
-          <button class="gallery-card__slide" type="button" data-lightbox="../images/ples-open-merch-01.webp" aria-label="Увеличить первое изображение проекта Ples Open 2026">
-            <img src="../images/ples-open-merch-01.webp" alt="Призовая футболка Ples Open 2026 с авторским принтом" width="1600" height="1130" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
-          </button>
-          <button class="gallery-card__slide" type="button" data-lightbox="../images/ples-open-merch-02.webp" aria-label="Увеличить второе изображение проекта Ples Open 2026">
-            <img src="../images/ples-open-merch-02.webp" alt="Футболка Ples Open 2026 на модели" width="1600" height="1130" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
-          </button>
-        </div>
-        <button class="gallery-card__arrow gallery-card__arrow--prev" type="button" data-gallery-prev aria-label="Предыдущее изображение">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-        <button class="gallery-card__arrow gallery-card__arrow--next" type="button" data-gallery-next aria-label="Следующее изображение">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-        <div class="gallery-card__counter" aria-live="polite"><span data-gallery-current>1</span> / <span data-gallery-total>2</span></div>
+        <div class="gallery-card__track" data-gallery-track>${slides}</div>
+        <button class="gallery-card__arrow gallery-card__arrow--prev" type="button" data-gallery-prev aria-label="Предыдущее изображение"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <button class="gallery-card__arrow gallery-card__arrow--next" type="button" data-gallery-next aria-label="Следующее изображение"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <div class="gallery-card__counter" aria-live="polite"><span data-gallery-current>1</span> / <span data-gallery-total>${total}</span></div>
       </div>
       <div class="gallery-card__caption">
-        <div><span>Мерч · баскетбольный турнир</span><h3>Ples Open 2026</h3></div>
-        <p>Принт для призовых футболок баскетбольного турнира</p>
+        <div><span>${eyebrow}</span><h3>${title}</h3></div>
+        <p>${description}</p>
       </div>
       <div class="gallery-card__dots" data-gallery-dots aria-label="Навигация по изображениям"></div>
     `;
 
-    if (placeholder) placeholder.replaceWith(merchGallery);
-    else merchSection.appendChild(merchGallery);
-  }
+    if (placeholder) placeholder.replaceWith(gallery);
+    else section.appendChild(gallery);
+  };
+
+  ensureSectionGallery({
+    sectionId: 'digital',
+    title: 'MND',
+    eyebrow: 'Digital-дизайн · социальные сети',
+    description: 'Оформление соцсетей для бренда украшений MND',
+    slug: 'mnd-digital',
+    total: 2,
+    width: 1600,
+    height: 1130
+  });
+
+  ensureSectionGallery({
+    sectionId: 'merch',
+    title: 'Ples Open 2026',
+    eyebrow: 'Мерч · баскетбольный турнир',
+    description: 'Принт для призовых футболок баскетбольного турнира',
+    slug: 'ples-open-merch',
+    total: 2,
+    width: 1600,
+    height: 1130
+  });
 
   const hydrateGallery = ({ title, slug, width, height, total }) => {
     const gallery = findGallery(title);
@@ -86,7 +100,6 @@
     if (!track) return;
 
     const existingSlides = [...track.querySelectorAll('.gallery-card__slide')];
-
     existingSlides.forEach((slide, index) => {
       const imageNumber = index + 1;
       if (imageNumber > total) {
@@ -108,7 +121,6 @@
     const currentSlides = [...track.querySelectorAll('.gallery-card__slide')];
     for (let imageIndex = currentSlides.length + 1; imageIndex <= total; imageIndex += 1) {
       const src = `../images/${slug}-${String(imageIndex).padStart(2, '0')}.webp`;
-
       const slide = document.createElement('button');
       slide.className = 'gallery-card__slide';
       slide.type = 'button';
@@ -131,6 +143,9 @@
   hydrateGallery({ title: 'Прудыкс', slug: 'prudyks', width: 842, height: 595, total: 7 });
   hydrateGallery({ title: 'Музей Выксы', slug: 'museum-vyksa', width: 1600, height: 1131, total: 6 });
 
+  const dialog = document.querySelector('[data-lightbox-dialog]');
+  const dialogImage = document.querySelector('[data-lightbox-image]');
+
   document.querySelectorAll('[data-gallery]').forEach(gallery => {
     const track = gallery.querySelector('[data-gallery-track]');
     const viewport = gallery.querySelector('[data-gallery-viewport]');
@@ -148,13 +163,22 @@
     if (totalLabel) totalLabel.textContent = String(slides.length);
     if (dotsContainer) dotsContainer.innerHTML = '';
 
-    const dots = slides.map((_, dotIndex) => {
+    const dots = slides.map((slide, dotIndex) => {
       const dot = document.createElement('button');
       dot.type = 'button';
       dot.className = 'gallery-card__dot';
       dot.setAttribute('aria-label', `Показать изображение ${dotIndex + 1}`);
       dot.addEventListener('click', () => goTo(dotIndex));
       dotsContainer?.append(dot);
+
+      if (!slide.dataset.lightboxBound) {
+        slide.dataset.lightboxBound = 'true';
+        slide.addEventListener('click', () => {
+          if (!dialog || !dialogImage || !slide.dataset.lightbox) return;
+          dialogImage.src = slide.dataset.lightbox;
+          if (!dialog.open) dialog.showModal();
+        });
+      }
       return dot;
     });
 
@@ -178,8 +202,14 @@
       update();
     }
 
-    previous?.addEventListener('click', () => goTo(index - 1));
-    next?.addEventListener('click', () => goTo(index + 1));
+    previous?.addEventListener('click', event => {
+      event.stopPropagation();
+      goTo(index - 1);
+    });
+    next?.addEventListener('click', event => {
+      event.stopPropagation();
+      goTo(index + 1);
+    });
 
     viewport.addEventListener('pointerdown', event => {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
