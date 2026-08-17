@@ -226,4 +226,50 @@
 
     update();
   });
+
+  const loopingVideos = [...document.querySelectorAll('#digital video[autoplay][loop]')];
+  if (loopingVideos.length) {
+    const tryPlay = video => {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      const playPromise = video.play();
+      if (playPromise?.catch) playPromise.catch(() => {});
+    };
+
+    const videoObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const video = entry.target;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.2 && !document.hidden) {
+          tryPlay(video);
+        } else {
+          video.pause();
+        }
+      });
+    }, { threshold: [0, 0.2, 0.5] });
+
+    loopingVideos.forEach(video => {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.setAttribute('muted', '');
+      video.setAttribute('playsinline', '');
+      video.addEventListener('loadeddata', () => {
+        const rect = video.getBoundingClientRect();
+        if (rect.bottom > 0 && rect.top < window.innerHeight && !document.hidden) tryPlay(video);
+      }, { once: true });
+      videoObserver.observe(video);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      loopingVideos.forEach(video => {
+        if (document.hidden) {
+          video.pause();
+          return;
+        }
+        const rect = video.getBoundingClientRect();
+        if (rect.bottom > 0 && rect.top < window.innerHeight) tryPlay(video);
+      });
+    });
+  }
 })();
