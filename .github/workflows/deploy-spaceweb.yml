@@ -26,6 +26,7 @@ jobs:
         run: |
           lftp -c "
           set ftp:passive-mode true;
+          set ssl:check-hostname false;
           open -u \"$FTP_USER\",\"$FTP_PASSWORD\" \"$FTP_HOST\";
           mirror --reverse --verbose \
             --exclude-glob .git* \
