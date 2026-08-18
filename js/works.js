@@ -84,8 +84,8 @@
           <button class="gallery-card__slide" type="button" data-lightbox="../images/svaromo-packaging-01.webp" aria-label="Увеличить первое изображение проекта SVAROMO">
             <img src="../images/svaromo-packaging-01.webp" alt="SVAROMO — дизайн этикеток для эко-косметики, изображение 1" width="2048" height="1447" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
           </button>
-          <button class="gallery-card__slide" type="button" data-lightbox="../images/svaromo-packaging-02.webp" aria-label="Увеличить второе изображение проекта SVAROMO">
-            <img src="../images/svaromo-packaging-02.webp" alt="SVAROMO — дизайн этикеток для эко-косметики, изображение 2" width="2048" height="1447" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/svaromo-packaging-02.webp?v=2" aria-label="Увеличить второе изображение проекта SVAROMO">
+            <img src="../images/svaromo-packaging-02.webp?v=2" alt="SVAROMO — дизайн этикеток для эко-косметики, изображение 2" width="2048" height="1447" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
           </button>
           <div class="gallery-card__slide" aria-label="Видео-мокап упаковки SVAROMO">
             <video autoplay loop muted playsinline preload="metadata" disablepictureinpicture aria-label="SVAROMO — видео-мокап упаковки" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;pointer-events:none;">
