@@ -72,6 +72,42 @@
     else section.appendChild(gallery);
   };
 
+  const packagingSection = document.querySelector('#packaging');
+  if (packagingSection && !findGallery('SVAROMO')) {
+    const placeholder = packagingSection.querySelector('.empty-category');
+    const gallery = document.createElement('article');
+    gallery.className = 'gallery-card gallery-card--natural reveal is-visible';
+    gallery.dataset.gallery = '';
+    gallery.innerHTML = `
+      <div class="gallery-card__viewport" data-gallery-viewport>
+        <div class="gallery-card__track" data-gallery-track>
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/svaromo-packaging-01.webp" aria-label="Увеличить первое изображение проекта SVAROMO">
+            <img src="../images/svaromo-packaging-01.webp" alt="SVAROMO — дизайн этикеток для эко-косметики, изображение 1" width="2048" height="1447" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
+          </button>
+          <button class="gallery-card__slide" type="button" data-lightbox="../images/svaromo-packaging-02.webp" aria-label="Увеличить второе изображение проекта SVAROMO">
+            <img src="../images/svaromo-packaging-02.webp" alt="SVAROMO — дизайн этикеток для эко-косметики, изображение 2" width="2048" height="1447" loading="lazy" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;">
+          </button>
+          <div class="gallery-card__slide" aria-label="Видео-мокап упаковки SVAROMO">
+            <video autoplay loop muted playsinline preload="metadata" disablepictureinpicture aria-label="SVAROMO — видео-мокап упаковки" style="display:block;width:100%;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;object-position:center;pointer-events:none;">
+              <source src="../images/svaromo-packaging-03.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <button class="gallery-card__arrow gallery-card__arrow--prev" type="button" data-gallery-prev aria-label="Предыдущий материал"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <button class="gallery-card__arrow gallery-card__arrow--next" type="button" data-gallery-next aria-label="Следующий материал"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <div class="gallery-card__counter" aria-live="polite"><span data-gallery-current>1</span> / <span data-gallery-total>3</span></div>
+      </div>
+      <div class="gallery-card__caption">
+        <div><span>Упаковка · эко-косметика</span><h3>SVAROMO</h3></div>
+        <p>Дизайн этикеток для линии эко-косметики SVAROMO: крем для лица и крем-баттер для тела.</p>
+      </div>
+      <div class="gallery-card__dots" data-gallery-dots aria-label="Навигация по материалам"></div>
+    `;
+
+    if (placeholder) placeholder.replaceWith(gallery);
+    else packagingSection.appendChild(gallery);
+  }
+
   ensureSectionGallery({
     sectionId: 'digital',
     title: 'MND',
@@ -227,7 +263,7 @@
     update();
   });
 
-  const loopingVideos = [...document.querySelectorAll('#digital video[autoplay][loop]')];
+  const loopingVideos = [...document.querySelectorAll('video[autoplay][loop]')];
   if (loopingVideos.length) {
     const tryPlay = video => {
       video.muted = true;
