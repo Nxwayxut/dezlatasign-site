@@ -13,16 +13,6 @@ jobs:
       - name: Get website files
         uses: actions/checkout@v4
 
-      - name: Decode generated media assets
-        run: |
-          if [ -d .asset-parts ]; then
-            for src in .asset-parts/*.b64; do
-              [ -e "$src" ] || continue
-              name="$(basename "$src" .b64)"
-              base64 -d "$src" > "images/$name"
-            done
-          fi
-
       - name: Install FTP client
         run: |
           sudo apt-get update
@@ -41,7 +31,6 @@ jobs:
           mirror --reverse --verbose \
             --exclude-glob .git* \
             --exclude-glob .github/** \
-            --exclude-glob .asset-parts/** \
             ./ /;
           bye
           "
