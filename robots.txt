@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 
 Sitemap: https://dezlatasign.ru/sitemap.xml
+
+# deploy refresh 2026-08-21
