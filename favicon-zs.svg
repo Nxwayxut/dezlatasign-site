@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="18" fill="#2c16ff"/>
-  <rect x="7.5" y="7.5" width="49" height="49" rx="14.5" stroke="rgba(255,255,255,0.16)"/>
-  <g fill="white" font-family="Arial, Helvetica, sans-serif" font-weight="700">
+  <rect width="64" height="64" rx="18" fill="#e8ee74"/>
+  <rect x="7.5" y="7.5" width="49" height="49" rx="14.5" stroke="rgba(239,242,221,0.16)"/>
+  <g fill="#eff2dd" font-family="Arial, Helvetica, sans-serif" font-weight="700">
     <text x="15" y="38" font-size="22" letter-spacing="1">ZS</text>
     <circle cx="44.5" cy="34.5" r="2.3"/>
   </g>
