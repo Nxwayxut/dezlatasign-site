@@ -824,6 +824,23 @@ html.reveal-enabled .reveal.is-visible { opacity: 1; transform: none; }
   }
 }
 
+/* Global contrast for surfaces with the accent green background. */
+::selection,
+.round-link:hover,
+.price-row:hover,
+.contact,
+body .privacy-action--accent,
+body .cookie-consent__button--accept,
+.category-index a:hover,
+.category-index a:focus-visible {
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .main-nav,
+  .menu-toggle[aria-expanded="true"] { color: var(--ink); }
+}
+
 /* Compact laptops and 1366×768-class displays */
 @media (min-width: 901px) and (max-width: 1399px) {
   :root {

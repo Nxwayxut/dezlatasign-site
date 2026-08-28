@@ -253,9 +253,9 @@
   width: clamp(230px, 31vw, 480px);
   max-width: 90%;
   height: auto;
-  opacity: .35;
-  filter: grayscale(1);
-  mix-blend-mode: multiply;
+  opacity: 1;
+  filter: none;
+  mix-blend-mode: normal;
 }
 
 @media (max-width: 900px) {
