@@ -177,7 +177,7 @@ button { color: inherit; font: inherit; }
 .hero__art {
   position: relative;
   z-index: 1;
-  width: min(100%, 455px);
+  width: min(100%, 500px);
   margin: 0;
   justify-self: end;
   align-self: center;
@@ -274,13 +274,13 @@ button { color: inherit; font: inherit; }
 .price-row h3 { margin: 0; font-family: var(--font-display); font-size: clamp(24px, 2.7vw, 38px); font-weight: 500; letter-spacing: .012em; }
 .price-row b { font-size: 14px; white-space: nowrap; }
 
-.contact { min-height: 92svh; padding: clamp(90px, 12vw, 170px) var(--pad) 32px; color: var(--light); background: var(--accent); display: flex; flex-direction: column; }
+.contact { min-height: 92svh; padding: clamp(90px, 12vw, 170px) var(--pad) 32px; color: var(--ink); background: var(--accent); display: flex; flex-direction: column; }
 .contact__eyebrow { margin-bottom: clamp(18px, 2vw, 30px); font-size: var(--small-size); text-transform: uppercase; letter-spacing: .1em; }
 .contact__mail { display: inline-block; align-self: flex-start; margin: 0 0 auto; font-family: var(--font-display); font-size: clamp(64px, 11.4vw, 170px); font-weight: 800; line-height: .92; letter-spacing: .01em; word-spacing: -.08em; padding-bottom: .14em; border-bottom: .04em solid currentColor; transition: opacity .25s ease; }
 .contact__mail:hover { opacity: .65; }
-.contact__links { display: flex; flex-wrap: wrap; gap: 12px; padding: 30px 0; border-top: 1px solid rgba(239,242,221,.45); border-bottom: 1px solid rgba(239,242,221,.45); }
-.contact__links a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px; border: 1px solid rgba(239,242,221,.55); border-radius: 100px; font-size: 13px; transition: color .25s ease, background .25s ease; }
-.contact__links a:hover { color: var(--accent); background: var(--light); }
+.contact__links { display: flex; flex-wrap: wrap; gap: 12px; padding: 30px 0; border-top: 1px solid rgba(71,65,53,.45); border-bottom: 1px solid rgba(71,65,53,.45); }
+.contact__links a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px; border: 1px solid rgba(71,65,53,.55); border-radius: 100px; font-size: 13px; transition: color .25s ease, background .25s ease; }
+.contact__links a:hover { color: var(--ink); background: var(--light); }
 .contact__links svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; overflow: visible; flex: 0 0 auto; }
 .contact__links a:last-child svg { width: 18px; height: 18px; fill: currentColor; stroke: none; transform: scale(1.08); transform-origin: center; }
 .contact-link--vk {
@@ -301,9 +301,9 @@ button { color: inherit; font: inherit; }
 }
 .contact-link--vk:hover,
 .contact-link--vk:focus-visible {
-  color: var(--accent);
+  color: var(--ink);
   background: var(--light);
-  border-color: var(--light);
+  border-color: var(--ink);
 }
 .contact__footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 26px; font-size: var(--small-size); text-transform: uppercase; letter-spacing: .1em; }
 
@@ -354,7 +354,7 @@ html.reveal-enabled .reveal.is-visible { opacity: 1; transform: none; }
     font-size: clamp(58px, 7.1vw, 86px);
     line-height: .86;
   }
-  .hero__art { width: min(100%, 370px); }
+  .hero__art { width: min(100%, 405px); }
 
   .section {
     padding-top: clamp(82px, 9vw, 112px);
@@ -434,7 +434,7 @@ html.reveal-enabled .reveal.is-visible { opacity: 1; transform: none; }
   }
   .hero__title { max-width: none; font-size: clamp(58px, 9vw, 104px); }
   .hero__bottom { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
-  .hero__art { width: min(100%, 340px); }
+  .hero__art { width: min(100%, 370px); }
   .about__grid { grid-template-columns: 1fr; }
   .about__image { position: relative; top: auto; max-width: 680px; }
   .projects__intro, .services__head { grid-template-columns: 1fr; }
@@ -473,7 +473,7 @@ html.reveal-enabled .reveal.is-visible { opacity: 1; transform: none; }
     text-align: left;
   }
   .hero__art {
-    width: min(90vw, 440px);
+    width: min(94vw, 470px);
     margin: 0 auto;
     justify-self: center;
   }

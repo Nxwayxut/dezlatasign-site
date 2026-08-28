@@ -2,18 +2,23 @@
 /* Portfolio page */
 .portfolio-page { background: var(--paper); }
 .portfolio-page main { overflow: clip; }
-.portfolio-page .site-header { background: rgba(239,242,221,.9); border-color: var(--line); backdrop-filter: blur(16px); }
+.portfolio-page .site-header { color: var(--light); background: rgba(71,65,53,.9); border-color: rgba(239,242,221,.24); backdrop-filter: blur(16px); }
+.portfolio-page .site-header.is-scrolled { color: var(--ink); background: rgba(239,242,221,.9); border-color: var(--line); }
 
 .portfolio-hero {
   max-width: var(--max);
   margin: 0 auto;
   padding: 116px var(--pad) clamp(90px, 11vw, 150px);
+  color: var(--light);
+  background: var(--ink);
+  box-shadow: 0 0 0 100vmax var(--ink);
+  clip-path: inset(0 -100vmax);
 }
 .portfolio-hero__meta {
   display: flex;
   justify-content: space-between;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--ink);
+  border-bottom: 1px solid rgba(239,242,221,.6);
   font-size: var(--small-size);
   font-weight: 600;
   letter-spacing: .1em;
@@ -39,14 +44,14 @@
 .portfolio-hero__main p {
   max-width: 520px;
   margin: 0;
-  color: var(--muted);
+  color: var(--light);
   font-size: var(--body-size);
   line-height: 1.65;
 }
 .category-index {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--ink);
+  border-top: 1px solid rgba(239,242,221,.6);
 }
 .category-index a {
   display: grid;
@@ -54,17 +59,17 @@
   align-items: center;
   min-height: 72px;
   padding: 0 18px 0 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(239,242,221,.24);
   font-family: var(--font-display);
   font-size: clamp(18px, 1.5vw, 24px);
   transition: color .2s ease, padding .2s ease, background .2s ease;
 }
 .category-index a:nth-child(even) { padding-left: 24px; }
-.category-index a:nth-child(odd) { border-right: 1px solid var(--line); }
+.category-index a:nth-child(odd) { border-right: 1px solid rgba(239,242,221,.24); }
 .category-index a::after { content: '↓'; font-family: var(--font-body); font-size: 16px; }
 .category-index a span { font-family: var(--font-body); font-size: 11px; letter-spacing: .1em; }
 .category-index a:hover,
-.category-index a:focus-visible { color: var(--light); background: var(--accent); padding-left: 16px; }
+.category-index a:focus-visible { color: var(--ink); background: var(--accent); padding-left: 16px; }
 
 .portfolio-category {
   max-width: var(--max);

@@ -85,14 +85,13 @@
     .cookie-consent.is-visible { opacity: 1; transform: none; pointer-events: auto; }
     .cookie-consent__grid { display: grid; grid-template-columns: 1fr auto; gap: clamp(18px, 3vw, 40px); align-items: end; }
     .cookie-consent__copy { max-width: 620px; }
-    .cookie-consent__eyebrow { display: inline-flex; margin-bottom: 12px; padding: 7px 10px; border-radius: 999px; color: var(--light, #eff2dd); background: var(--accent, #e8ee74); font: 700 11px/1 var(--font-body, Inter, sans-serif); letter-spacing: .08em; text-transform: uppercase; }
-    .cookie-consent h2 { margin: 0 0 8px; font: 700 clamp(22px, 2.5vw, 34px)/1.02 var(--font-display, Onest, sans-serif); letter-spacing: -.035em; }
+    .cookie-consent h2 { margin: 0; font: 700 clamp(22px, 2.5vw, 34px)/1.02 var(--font-display, Onest, sans-serif); letter-spacing: -.035em; }
     .cookie-consent p { margin: 0; color: var(--muted, #474135); font: 400 clamp(13px, 1.1vw, 15px)/1.5 var(--font-body, Inter, sans-serif); }
     .cookie-consent a { text-decoration: underline; text-underline-offset: 3px; }
     .cookie-consent__actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .cookie-consent__button { min-height: 44px; padding: 0 16px; border: 1px solid var(--ink, #474135); border-radius: 999px; background: transparent; cursor: pointer; font: 600 12px/1 var(--font-body, Inter, sans-serif); transition: transform .18s ease, background .18s ease, color .18s ease; }
     .cookie-consent__button:hover, .cookie-consent__button:focus-visible { transform: translateY(-1px); outline: none; }
-    .cookie-consent__button--accept { border-color: var(--accent, #e8ee74); color: var(--light, #eff2dd); background: var(--accent, #e8ee74); }
+    .cookie-consent__button--accept { border-color: var(--accent, #e8ee74); color: var(--ink, #474135); background: var(--accent, #e8ee74); }
     .cookie-settings-link { border: 0; padding: 0; color: inherit; background: transparent; cursor: pointer; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
     .contact__footer .cookie-legal-links { display: inline-flex; gap: 14px; align-items: center; flex-wrap: wrap; }
     @media (max-width: 720px) {
@@ -118,17 +117,14 @@
     banner = document.createElement('section');
     banner.className = 'cookie-consent';
     banner.setAttribute('role', 'dialog');
-    banner.setAttribute('aria-label', 'Настройки cookie');
+    banner.setAttribute('aria-label', 'Уведомление о cookie');
     banner.innerHTML = `
       <div class="cookie-consent__grid">
         <div class="cookie-consent__copy">
-          <span class="cookie-consent__eyebrow">cookie, но без крошек</span>
-          <h2>Тут водятся куки.</h2>
-          <p>Они помогают Яндекс Метрике понять, что на сайте смотрят чаще. Аналитика включится только с твоего согласия. <a href="/privacy/">Что именно собирается</a>.</p>
+          <h2>Мы используем куки</h2>
         </div>
         <div class="cookie-consent__actions">
-          <button class="cookie-consent__button" type="button" data-cookie-decline>Без статистики</button>
-          <button class="cookie-consent__button cookie-consent__button--accept" type="button" data-cookie-accept>Окей, считаем</button>
+          <button class="cookie-consent__button cookie-consent__button--accept" type="button" data-cookie-accept>Ясно</button>
         </div>
       </div>`;
     document.body.appendChild(banner);
@@ -136,12 +132,6 @@
     banner.querySelector('[data-cookie-accept]')?.addEventListener('click', () => {
       safeSet('accepted');
       loadMetrika();
-      hideBanner();
-    });
-
-    banner.querySelector('[data-cookie-decline]')?.addEventListener('click', () => {
-      safeSet('declined');
-      stopMetrika();
       hideBanner();
     });
 
