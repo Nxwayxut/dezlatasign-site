@@ -254,7 +254,7 @@
 }
 .empty-category img {
   display: block;
-  width: 100%;
+  width: 50%;
   max-width: none;
   height: auto;
   opacity: .5;
