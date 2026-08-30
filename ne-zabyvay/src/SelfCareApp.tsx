@@ -481,7 +481,7 @@ function TodayView({ data, setData, todayCheckins, post }: {
   const [isEditing, setIsEditing] = useState(false);
   const [editMessage, setEditMessage] = useState("");
   const [draftReminders, setDraftReminders] = useState<Reminder[]>(data.reminders);
-  const [undoCheckin, setUndoCheckin] = useState<{ checkin: Checkin; title: string; timer: number } | null>(null);
+  const [undoCheckin, setUndoCheckin] = useState<{ checkin: Checkin; timer: number } | null>(null);
   const visibleReminders = isEditing ? draftReminders : data.reminders;
   const total = data.reminders.filter((item) => item.enabled).reduce((sum, item) => sum + item.times.length, 0);
   const progress = total ? Math.min(100, Math.round(todayCheckins.length / total * 100)) : 0;
@@ -548,7 +548,7 @@ function TodayView({ data, setData, todayCheckins, post }: {
       setSavingTimes(false);
     }
   };
-  const commitCheckin = (pending: { checkin: Checkin; title: string; timer: number }) => {
+  const commitCheckin = (pending: { checkin: Checkin; timer: number }) => {
     window.clearTimeout(pending.timer);
     void post({ action: "checkin", type: pending.checkin.type }, undefined, false);
   };
@@ -559,8 +559,8 @@ function TodayView({ data, setData, todayCheckins, post }: {
     const timer = window.setTimeout(() => {
       void post({ action: "checkin", type: item.type }, undefined, false);
       setUndoCheckin((current) => current?.checkin.id === checkin.id ? null : current);
-    }, 6500);
-    setUndoCheckin({ checkin, title: item.title, timer });
+    }, 10000);
+    setUndoCheckin({ checkin, timer });
   };
   const undoLastCheckin = () => {
     if (!undoCheckin) return;
@@ -601,7 +601,9 @@ function TodayView({ data, setData, todayCheckins, post }: {
               {item.times.length < 10 && <button className="add-time" type="button" onClick={() => saveTimes(item, [...item.times, nextTime(item.times)])}><Plus /> Добавить время <small>{item.times.length}/10</small></button>}
               <button className="healthy-schedule" onClick={() => saveTimes(item, HEALTHY_TIMES[item.type])}>Предложить здоровый график</button>
             </> : <div className="time-row saved-times">{item.times.map((time) => <span key={`${item.id}-${time}`}>{time}</span>)}</div>}
-            {!isEditing && <button className="check-button" disabled={!item.enabled} onClick={() => markNow(item)}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>}
+            {!isEditing && (undoCheckin?.checkin.type === item.type
+              ? <button className="check-button undo-check-button" onClick={undoLastCheckin}><X /> Отменить отметку</button>
+              : <button className="check-button" disabled={!item.enabled} onClick={() => markNow(item)}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>)}
           </div>
         </article>;
       })}
@@ -610,7 +612,6 @@ function TodayView({ data, setData, todayCheckins, post }: {
       <button type="button" className="cancel-edit" disabled={savingTimes} onClick={cancelEditing}>Отмена</button>
       <button className="primary-button reminder-save" disabled={savingTimes} onClick={persistChanges}>{savingTimes ? "Сохраняю…" : "Сохранить"}</button>
     </div>}
-    {undoCheckin && <div className="undo-toast" role="status"><span><Check /> {undoCheckin.title}: отмечено</span><button type="button" onClick={undoLastCheckin}>Отменить</button></div>}
   </div>;
 }
 
