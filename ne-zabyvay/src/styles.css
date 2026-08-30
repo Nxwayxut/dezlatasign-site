@@ -75,7 +75,7 @@ h1, h2, h3, strong { font-weight: 700; }
 .phone-shell { width: min(100%, 480px); min-height: 100svh; background: var(--cream); position: relative; overflow: hidden; }
 .welcome-shell { padding: 34px 24px 28px; display: flex; flex-direction: column; overflow-y: auto; }
 .welcome-header { text-align: center; }
-.welcome-header h1, .account-copy h1 { font-size: clamp(36px, 9vw, 52px); font-weight: 700; line-height: .98; letter-spacing: -2.4px; margin: 10px 0 18px; }
+.welcome-header h1, .account-copy h1 { font-size: clamp(36px, 8.5vw, 43px); font-weight: 700; line-height: .98; letter-spacing: -2.4px; margin: 10px 0 18px; }
 .welcome-header h1 span, .account-copy h1 span { color: var(--orange); }
 .welcome-header p, .account-copy p { max-width: 380px; margin: 0 auto; font-size: 20px; line-height: 1.25; }
 .promise-list { display: grid; gap: 12px; margin-top: 30px; }
@@ -100,7 +100,7 @@ h1, h2, h3, strong { font-weight: 700; }
 .design-penguin img { position: absolute; height: auto; max-width: none; forced-color-adjust: none; }
 .design-penguin .penguin-transparent { display: none; }
 .design-penguin-main { height: 184px; margin: 24px 0 14px; background: radial-gradient(ellipse at 50% 82%, var(--penguin-glow), transparent 66%); }
-.design-penguin-main .penguin-transparent { display: block; width: 270px; left: 50%; bottom: -91px; transform: translateX(-50%); }
+.design-penguin-main .penguin-transparent { display: block; width: 230px; left: 50%; bottom: -22px; transform: translateX(-50%); }
 .design-penguin-account { aspect-ratio: 1.54; margin: -34px 0 8px; }
 .design-penguin-account .penguin-original { inset: 0 auto auto 0; width: 100%; }
 .design-penguin-email { aspect-ratio: 1.66; margin: auto 0 -28px; }
