@@ -66,7 +66,7 @@ function DesignPenguin({ variant }: { variant: "main" | "account" | "email" }) {
   const source = variant === "account" ? asset("design-register.png") : variant === "email" ? asset("design-email.png") : asset("design-main.png");
   return <div className={`design-penguin design-penguin-${variant}`} aria-hidden="true">
     {variant !== "main" && <img className="penguin-original" src={source} alt="" />}
-    <img className="penguin-transparent" src={asset("penguin.png")} alt="" />
+    <img className="penguin-transparent" src={asset("penguin-transparent.png")} alt="" />
   </div>;
 }
 
@@ -284,7 +284,7 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
     finally { setSaving(false); }
   };
 
-  if (!data && loadError) return <main className="app-stage"><section className="phone-shell loading error-loading"><img src={asset("penguin.png")} alt="Пингвин" width={180} height={180} /><h1>Не получилось загрузить</h1><p>Связь с базой прервалась. Нажми кнопку — я попробую ещё раз.</p><button className="primary-button" onClick={load}>Повторить</button></section></main>;
+  if (!data && loadError) return <main className="app-stage"><section className="phone-shell loading error-loading"><img src={asset("penguin-transparent.png")} alt="Пингвин" width={180} height={180} /><h1>Не получилось загрузить</h1><p>Связь с базой прервалась. Нажми кнопку — я попробую ещё раз.</p><button className="primary-button" onClick={load}>Повторить</button></section></main>;
   if (!data) return <main className="app-stage"><section className="phone-shell loading"><LoaderCircle className="spin" /><p>Пингвин вспоминает расписание…</p></section></main>;
 
   if (!data.profile.onboardingCompleted) {
@@ -391,7 +391,7 @@ function TodayView({ data, setData, todayCheckins, post }: {
   return <div className="screen">
     <header className="screen-header greeting">
       <div><p>Сегодня</p><h1>Привет, {data.profile.displayName}!</h1></div>
-      <div className="mini-penguin"><img src={asset("penguin.png")} alt="" /></div>
+      <div className="mini-penguin"><img src={asset("penguin-transparent.png")} alt="" /></div>
     </header>
     <section className="progress-card">
       <div><strong>{todayCheckins.length} из {total}</strong><span>маленьких забот выполнено</span></div>
@@ -500,7 +500,7 @@ function ProfileView({ data, user, saving, post, theme, setTheme, onSignOut }: {
   </div>;
 }
 
-function EmptyState({ text }: { text: string }) { return <div className="empty-state"><div className="empty-penguin"><img src={asset("penguin.png")} alt="" width={190} height={190} /></div><h2>Пока тихо</h2><p>{text}</p></div>; }
+function EmptyState({ text }: { text: string }) { return <div className="empty-state"><div className="empty-penguin"><img src={asset("penguin-transparent.png")} alt="" width={190} height={190} /></div><h2>Пока тихо</h2><p>{text}</p></div>; }
 
 function BottomNav({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
   const items = [
