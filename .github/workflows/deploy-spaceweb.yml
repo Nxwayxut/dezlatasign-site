@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/workflows/pages-ne-zabyvay.yml'
+      - '.github/workflows/deploy-spaceweb.yml'
   workflow_dispatch:
 
 jobs:
