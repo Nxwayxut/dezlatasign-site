@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BarChart3, Bell, Check, ChevronRight, Clock3, Delete,
-  Home, LoaderCircle, LogOut, Moon, Plus, Save, ShieldCheck, Sun, UserRound, X,
+  ArrowLeft, BarChart3, Bell, Check, CheckCircle2, ChevronRight, Clock3, Delete,
+  Download, Home, LoaderCircle, LogOut, Moon, MoreVertical, Pencil, Plus, Save,
+  Share2, ShieldCheck, Smartphone, SquarePlus, Sun, UserRound, X,
 } from "lucide-react";
 
 type User = { displayName: string; email: string; fullName: string | null };
@@ -13,6 +14,12 @@ type AppData = { profile: Profile; reminders: Reminder[]; checkins: Checkin[] };
 type Tab = "today" | "history" | "stats" | "profile";
 type Theme = "light" | "dark";
 type AuthMode = "signup" | "login";
+type InstallOS = "ios" | "android";
+type InstallBrowser = "safari" | "chrome" | "yandex" | "mi";
+type InstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
 
 const META = {
   water: { title: "Вода", text: "Напомню не забыть про воду", color: "blue" },
@@ -29,6 +36,7 @@ const HEALTHY_TIMES: Record<ReminderType, string[]> = {
 const API_URL = import.meta.env.VITE_API_URL || "https://script.google.com/macros/s/AKfycbxy_PDrNcLIGU05xQJMLB-XEXbtL6vY4NVj8ANHV79sLlwb98TKjOVsSU5U_NYcY1Y/exec";
 const TOKEN_KEY = "ne-zabyvay-session";
 const THEME_KEY = "ne-zabyvay-theme";
+const INSTALL_GUIDE_KEY = "ne-zabyvay-install-guide-seen";
 const asset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
 
 class ApiError extends Error {}
@@ -246,6 +254,8 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(() => localStorage.getItem(INSTALL_GUIDE_KEY) !== "yes");
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
 
   const load = useCallback(async () => {
     try { setData(await api() as unknown as AppData); setLoadError(false); }
@@ -257,6 +267,15 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
     navigator.serviceWorker?.register(asset("sw.js")).catch(() => undefined);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    const rememberPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", rememberPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", rememberPrompt);
+  }, []);
 
   useEffect(() => {
     if (!data || typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") return;
@@ -295,6 +314,18 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
     />;
   }
 
+  if (showInstallGuide) {
+    return <main className="app-stage"><section className="phone-shell app-shell">
+      <InstallGuide
+        installPrompt={installPrompt}
+        onClose={() => {
+          localStorage.setItem(INSTALL_GUIDE_KEY, "yes");
+          setShowInstallGuide(false);
+        }}
+      />
+    </section></main>;
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const todayCheckins = data.checkins.filter((item) => item.completedAt.startsWith(today));
 
@@ -305,11 +336,113 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
         {tab === "today" && <TodayView data={data} setData={setData} todayCheckins={todayCheckins} post={post} />}
         {tab === "history" && <HistoryView checkins={data.checkins} />}
         {tab === "stats" && <StatsView checkins={data.checkins} />}
-        {tab === "profile" && <ProfileView data={data} user={user} saving={saving} post={post} theme={theme} setTheme={setTheme} onSignOut={onSignOut} />}
+        {tab === "profile" && <ProfileView data={data} setData={setData} user={user} saving={saving} post={post} theme={theme} setTheme={setTheme} onOpenInstall={() => setShowInstallGuide(true)} onSignOut={onSignOut} />}
       </div>
       <BottomNav tab={tab} setTab={setTab} />
     </section>
   </main>;
+}
+
+const INSTALL_STEPS: Record<InstallOS, Partial<Record<InstallBrowser, Array<{ title: string; text: string; icon: "share" | "menu" | "add" | "done" }>>>> = {
+  ios: {
+    safari: [
+      { title: "Нажми «Поделиться»", text: "Квадрат со стрелкой находится внизу Safari.", icon: "share" },
+      { title: "Выбери «На экран Домой»", text: "Если пункта не видно — немного пролистай меню вниз.", icon: "add" },
+      { title: "Нажми «Добавить»", text: "Иконка «Не забывай» появится рядом с приложениями.", icon: "done" },
+    ],
+    chrome: [
+      { title: "Нажми «Поделиться»", text: "Значок находится справа в адресной строке или в меню.", icon: "share" },
+      { title: "Выбери «На экран Домой»", text: "На некоторых версиях iOS сначала нужно открыть ссылку в Safari.", icon: "add" },
+      { title: "Подтверди добавление", text: "После этого приложение откроется без вкладок браузера.", icon: "done" },
+    ],
+    yandex: [
+      { title: "Открой меню браузера", text: "Нажми кнопку меню рядом с адресной строкой.", icon: "menu" },
+      { title: "Нажми «Поделиться»", text: "Затем выбери «На экран Домой». Если пункта нет — открой сайт в Safari.", icon: "share" },
+      { title: "Нажми «Добавить»", text: "Готовая иконка появится на домашнем экране.", icon: "done" },
+    ],
+  },
+  android: {
+    chrome: [
+      { title: "Открой меню ⋮", text: "Три точки находятся справа сверху в Chrome.", icon: "menu" },
+      { title: "Выбери установку", text: "Нажми «Установить приложение» или «Добавить на главный экран».", icon: "add" },
+      { title: "Нажми «Установить»", text: "«Не забывай» появится среди остальных приложений.", icon: "done" },
+    ],
+    yandex: [
+      { title: "Открой меню", text: "Нажми кнопку меню справа от адресной строки.", icon: "menu" },
+      { title: "Выбери «Добавить ярлык»", text: "Затем нажми «На главный экран».", icon: "add" },
+      { title: "Подтверди", text: "Иконка приложения появится на домашнем экране.", icon: "done" },
+    ],
+    mi: [
+      { title: "Открой меню", text: "Нажми значок меню в нижней части Mi Browser.", icon: "menu" },
+      { title: "Выбери «Добавить на экран»", text: "Название пункта может быть «Add to Home screen».", icon: "add" },
+      { title: "Нажми «Добавить»", text: "Ярлык появится на свободном месте домашнего экрана.", icon: "done" },
+    ],
+  },
+};
+
+function InstallStepIcon({ name }: { name: "share" | "menu" | "add" | "done" }) {
+  if (name === "share") return <Share2 />;
+  if (name === "menu") return <MoreVertical />;
+  if (name === "add") return <SquarePlus />;
+  return <CheckCircle2 />;
+}
+
+function InstallGuide({ installPrompt, onClose }: { installPrompt: InstallPromptEvent | null; onClose: () => void }) {
+  const detectedOS: InstallOS = /android/i.test(navigator.userAgent) ? "android" : "ios";
+  const detectedBrowser: InstallBrowser = /miuibrowser/i.test(navigator.userAgent)
+    ? "mi"
+    : /yabrowser/i.test(navigator.userAgent)
+      ? "yandex"
+      : /crios|chrome/i.test(navigator.userAgent)
+        ? "chrome"
+        : "safari";
+  const [os, setOS] = useState<InstallOS>(detectedOS);
+  const availableBrowsers = os === "ios"
+    ? [{ id: "safari" as const, label: "Safari" }, { id: "chrome" as const, label: "Chrome" }, { id: "yandex" as const, label: "Яндекс" }]
+    : [{ id: "chrome" as const, label: "Chrome" }, { id: "yandex" as const, label: "Яндекс" }, { id: "mi" as const, label: "Mi Browser" }];
+  const initialBrowser = availableBrowsers.some((item) => item.id === detectedBrowser) ? detectedBrowser : availableBrowsers[0].id;
+  const [browser, setBrowser] = useState<InstallBrowser>(initialBrowser);
+  const steps = INSTALL_STEPS[os][browser] || INSTALL_STEPS[os][availableBrowsers[0].id] || [];
+
+  const chooseOS = (nextOS: InstallOS) => {
+    setOS(nextOS);
+    setBrowser(nextOS === "ios" ? "safari" : "chrome");
+  };
+
+  const startInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === "accepted") onClose();
+  };
+
+  return <div className="install-guide">
+    <header className="install-header">
+      <button type="button" className="install-back" onClick={onClose} aria-label="Закрыть инструкцию"><ArrowLeft /></button>
+      <div className="install-penguin"><img src={asset("penguin-transparent.png")} alt="Пингвин" /></div>
+      <p>Всегда под рукой</p>
+      <h1><span>Добавь</span> на экран</h1>
+      <small>Так «Не забывай» будет открываться как обычное приложение.</small>
+    </header>
+
+    {installPrompt && <button type="button" className="primary-button quick-install" onClick={startInstall}><Download /> Установить автоматически</button>}
+
+    <div className="install-tabs" aria-label="Выбор устройства">
+      <button className={os === "ios" ? "active" : ""} onClick={() => chooseOS("ios")}>iPhone</button>
+      <button className={os === "android" ? "active" : ""} onClick={() => chooseOS("android")}>Android</button>
+    </div>
+    <div className="browser-tabs" aria-label="Выбор браузера">
+      {availableBrowsers.map((item) => <button key={item.id} className={browser === item.id ? "active" : ""} onClick={() => setBrowser(item.id)}>{item.label}</button>)}
+    </div>
+
+    <div className="install-steps">
+      {steps.map((step, index) => <article key={`${browser}-${step.title}`}>
+        <div className="install-step-picture"><span>{index + 1}</span><InstallStepIcon name={step.icon} /></div>
+        <div><h2>{step.title}</h2><p>{step.text}</p></div>
+      </article>)}
+    </div>
+    <button type="button" className="primary-button install-finish" onClick={onClose}>Понятно</button>
+  </div>;
 }
 
 function RegistrationFinish({ data, saving, post }: {
@@ -345,15 +478,17 @@ function TodayView({ data, setData, todayCheckins, post }: {
   post: (body: Record<string, unknown>, success?: string, refresh?: boolean) => Promise<void>;
 }) {
   const [savingTimes, setSavingTimes] = useState(false);
-  const [timesSaved, setTimesSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editMessage, setEditMessage] = useState("");
+  const [draftReminders, setDraftReminders] = useState<Reminder[]>(data.reminders);
+  const visibleReminders = isEditing ? draftReminders : data.reminders;
   const total = data.reminders.filter((item) => item.enabled).reduce((sum, item) => sum + item.times.length, 0);
   const progress = total ? Math.min(100, Math.round(todayCheckins.length / total * 100)) : 0;
-  const updateReminder = (id: string, update: Partial<Reminder>) => setData((current) => current ? {
-    ...current, reminders: current.reminders.map((reminder) => reminder.id === id ? { ...reminder, ...update } : reminder),
-  } : current);
+  const updateReminder = (id: string, update: Partial<Reminder>) => setDraftReminders((current) =>
+    current.map((reminder) => reminder.id === id ? { ...reminder, ...update } : reminder));
   const saveTimes = (item: Reminder, times: string[]) => {
     updateReminder(item.id, { times: times.slice(0, 10) });
-    setTimesSaved(false);
+    setEditMessage("");
   };
   const reminderWord = (count: number) => {
     const mod100 = count % 100;
@@ -376,14 +511,38 @@ function TodayView({ data, setData, todayCheckins, post }: {
     }
     return "09:00";
   };
-  const persistTimes = async () => {
+  const beginEditing = () => {
+    setDraftReminders(data.reminders.map((item) => ({ ...item, times: [...item.times] })));
+    setEditMessage("");
+    setIsEditing(true);
+  };
+  const cancelEditing = () => {
+    setDraftReminders(data.reminders.map((item) => ({ ...item, times: [...item.times] })));
+    setEditMessage("");
+    setIsEditing(false);
+  };
+  const persistChanges = async () => {
     setSavingTimes(true);
+    setEditMessage("");
     try {
-      await Promise.all(data.reminders.map((item) => {
+      const requests: Array<Promise<Record<string, unknown>>> = [];
+      const cleaned = draftReminders.map((item) => {
         const clean = [...new Set(item.times.filter((time) => /^\d{2}:\d{2}$/.test(time)))].sort().slice(0, 10);
-        return api({ action: "times", id: item.id, times: clean.length ? clean : ["09:00"] });
-      }));
-      setTimesSaved(true);
+        return { ...item, times: clean.length ? clean : ["09:00"] };
+      });
+      cleaned.forEach((item) => {
+        const original = data.reminders.find((value) => value.id === item.id);
+        if (!original) return;
+        if (original.enabled !== item.enabled) requests.push(api({ action: "toggle", id: item.id, enabled: item.enabled }));
+        if (JSON.stringify(original.times) !== JSON.stringify(item.times)) requests.push(api({ action: "times", id: item.id, times: item.times }));
+      });
+      await Promise.all(requests);
+      setData((current) => current ? { ...current, reminders: cleaned } : current);
+      setDraftReminders(cleaned);
+      setIsEditing(false);
+      setEditMessage(requests.length ? "Изменения сохранены" : "Изменений не было");
+    } catch {
+      setEditMessage("Не получилось сохранить. Попробуй ещё раз");
     } finally {
       setSavingTimes(false);
     }
@@ -397,40 +556,42 @@ function TodayView({ data, setData, todayCheckins, post }: {
       <div><strong>{todayCheckins.length} из {total}</strong><span>маленьких забот выполнено</span></div>
       <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div>
     </section>
-    <h2 className="section-title">Напоминания</h2>
+    <div className="reminder-heading"><h2 className="section-title">Напоминания</h2>
+      {!isEditing && <button type="button" className="edit-reminders" onClick={beginEditing}><Pencil /> <span>Редактировать</span></button>}
+    </div>
+    {editMessage && <p className={`edit-status ${editMessage.startsWith("Не получилось") ? "error" : ""}`}>{editMessage}</p>}
     <div className="reminder-stack">
-      {data.reminders.map((item) => {
+      {visibleReminders.map((item) => {
         const done = todayCheckins.filter((checkin) => checkin.type === item.type).length;
         return <article className={`reminder-card ${!item.enabled ? "disabled" : ""}`} key={item.id}>
           <CareIcon type={item.type} />
           <div className="reminder-body">
             <div className="reminder-top"><div><h3>{item.title}</h3><p>{item.times.length} {reminderWord(item.times.length)} в день</p></div>
-              <ToggleSwitch checked={item.enabled} label={`Включить ${item.title}`} onChange={(enabled) => {
-                updateReminder(item.id, { enabled });
-                void post({ action: "toggle", id: item.id, enabled }, undefined, false);
-              }} />
+              {isEditing
+                ? <ToggleSwitch checked={item.enabled} label={`Включить ${item.title}`} onChange={(enabled) => updateReminder(item.id, { enabled })} />
+                : <span className={`reminder-state ${item.enabled ? "on" : ""}`}>{item.enabled ? "Включено" : "Выключено"}</span>}
             </div>
-            <div className="time-row editable-times">{item.times.map((time, index) => <span className="time-control" key={`${item.id}-${index}`}>
-              <input
-                type="time"
-                aria-label={`Время напоминания ${index + 1}`}
-                value={time}
-                onChange={(event) => saveTimes(item, item.times.map((value, position) => position === index ? event.target.value : value))}
-              />
-              <button type="button" disabled={item.times.length <= 1} aria-label={`Удалить время ${time}`} onClick={() => saveTimes(item, item.times.filter((_, position) => position !== index))}><X /></button>
-            </span>)}</div>
-            {item.times.length < 10 && <button className="add-time" type="button" onClick={() => saveTimes(item, [...item.times, nextTime(item.times)])}><Plus /> Добавить время <small>{item.times.length}/10</small></button>}
-            <button className="healthy-schedule" onClick={() => saveTimes(item, HEALTHY_TIMES[item.type])}>Предложить здоровый график</button>
-            <button className="check-button" disabled={!item.enabled} onClick={() => {
+            {isEditing ? <>
+              <div className="time-row editable-times">{item.times.map((time, index) => <span className="time-control" key={`${item.id}-${index}`}>
+                <input type="time" aria-label={`Время напоминания ${index + 1}`} value={time} onChange={(event) => saveTimes(item, item.times.map((value, position) => position === index ? event.target.value : value))} />
+                <button type="button" disabled={item.times.length <= 1} aria-label={`Удалить время ${time}`} onClick={() => saveTimes(item, item.times.filter((_, position) => position !== index))}><X /></button>
+              </span>)}</div>
+              {item.times.length < 10 && <button className="add-time" type="button" onClick={() => saveTimes(item, [...item.times, nextTime(item.times)])}><Plus /> Добавить время <small>{item.times.length}/10</small></button>}
+              <button className="healthy-schedule" onClick={() => saveTimes(item, HEALTHY_TIMES[item.type])}>Предложить здоровый график</button>
+            </> : <div className="time-row saved-times">{item.times.map((time) => <span key={`${item.id}-${time}`}>{time}</span>)}</div>}
+            {!isEditing && <button className="check-button" disabled={!item.enabled} onClick={() => {
               const checkin = { id: crypto.randomUUID(), type: item.type, completedAt: new Date().toISOString() };
               setData((current) => current ? { ...current, checkins: [checkin, ...current.checkins] } : current);
               void post({ action: "checkin", type: item.type }, `${item.title}: отмечено`, false);
-            }}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>
+            }}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>}
           </div>
         </article>;
       })}
     </div>
-    <button className="primary-button reminder-save" disabled={savingTimes} onClick={persistTimes}>{savingTimes ? "Сохраняю…" : timesSaved ? "Сохранено" : "Сохранить"}</button>
+    {isEditing && <div className="edit-actions">
+      <button type="button" className="cancel-edit" disabled={savingTimes} onClick={cancelEditing}>Отмена</button>
+      <button className="primary-button reminder-save" disabled={savingTimes} onClick={persistChanges}>{savingTimes ? "Сохраняю…" : "Сохранить"}</button>
+    </div>}
   </div>;
 }
 
@@ -472,7 +633,7 @@ function StatsView({ checkins }: { checkins: Checkin[] }) {
   </div>;
 }
 
-function ProfileView({ data, user, saving, post, theme, setTheme, onSignOut }: { data: AppData; user: User; saving: boolean; post: (body: Record<string, unknown>, success?: string) => Promise<void>; theme: Theme; setTheme: (theme: Theme) => void; onSignOut: () => void }) {
+function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpenInstall, onSignOut }: { data: AppData; setData: React.Dispatch<React.SetStateAction<AppData | null>>; user: User; saving: boolean; post: (body: Record<string, unknown>, success?: string, refresh?: boolean) => Promise<void>; theme: Theme; setTheme: (theme: Theme) => void; onOpenInstall: () => void; onSignOut: () => void }) {
   const [name, setName] = useState(data.profile.displayName);
   const [goal, setGoal] = useState(data.profile.goal);
   const notificationStatus = typeof window !== "undefined" && "Notification" in window
@@ -484,15 +645,20 @@ function ProfileView({ data, user, saving, post, theme, setTheme, onSignOut }: {
     if (permission !== "granted") return;
     const registration = await navigator.serviceWorker.ready;
     registration.active?.postMessage({ type: "SHOW_REMINDER", title: "Ура, всё работает!", body: "Теперь я смогу мягко напоминать о заботе", tag: "welcome-notification" });
-    await post({ action: "profile", displayName: name, goal }, "Уведомления включены");
+    await post({ action: "profile", displayName: name, goal }, "Уведомления включены", false);
+  };
+  const saveProfile = () => {
+    setData((current) => current ? { ...current, profile: { ...current.profile, displayName: name, goal } } : current);
+    void post({ action: "profile", displayName: name, goal }, "Профиль сохранён", false);
   };
   return <div className="screen"><header className="screen-header profile-head"><div className="profile-avatar"><UserRound /></div><div><p>{user.email}</p><h1>{name}</h1></div></header>
     <section className="settings-card"><label>Как к тебе обращаться?<input value={name} onChange={(event) => setName(event.target.value)} maxLength={40} /></label>
       <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="water">Пить больше воды</option><option value="food">Регулярно кушать</option><option value="rest">Больше отдыхать</option></select></label>
-      <button className="primary-button save-button" disabled={saving} onClick={() => post({ action: "profile", displayName: name, goal }, "Профиль сохранён")}><Save /> Сохранить</button>
+      <button className="primary-button save-button" disabled={saving} onClick={saveProfile}><Save /> Сохранить</button>
     </section>
     <section className="settings-list">
       <div className="settings-row">{theme === "dark" ? <Moon /> : <Sun />}<span><strong>Тёмная тема</strong><small>{theme === "dark" ? "Включена" : "Выключена"}</small></span><ToggleSwitch checked={theme === "dark"} label="Переключить тему" onChange={(dark) => setTheme(dark ? "dark" : "light")} /></div>
+      <button onClick={onOpenInstall}><Smartphone /><span><strong>Добавить на экран</strong><small>Инструкция для iPhone и Android</small></span><ChevronRight /></button>
       <button onClick={enableNotifications}><Bell /><span><strong>Уведомления</strong><small>{notificationStatus}</small></span><ChevronRight /></button>
       <a href={asset("privacy.html")}><ShieldCheck /><span><strong>Конфиденциальность</strong><small>Как хранятся данные</small></span><ChevronRight /></a>
       <button onClick={onSignOut}><LogOut /><span><strong>Выйти</strong><small>Данные останутся сохранены</small></span><ChevronRight /></button>

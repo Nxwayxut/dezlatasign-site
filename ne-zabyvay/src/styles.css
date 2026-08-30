@@ -67,7 +67,8 @@ html { background: var(--outer-bg); }
 body { margin: 0; background: radial-gradient(circle at 50% 0, var(--body-start), var(--body-end) 70%); color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
 button, input, select { font: inherit; }
 button, input, select { color: var(--ink); }
-button, a { -webkit-tap-highlight-color: transparent; }
+button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button { user-select: none; -webkit-user-select: none; }
 a { color: inherit; }
 h1, h2, h3, strong { font-weight: 700; }
 
@@ -109,7 +110,7 @@ h1, h2, h3, strong { font-weight: 700; }
 html[data-theme="dark"] .design-penguin .penguin-original { display: none; }
 html[data-theme="dark"] .design-penguin-account .penguin-transparent { display: block; width: 300px; left: 50%; top: -40px; transform: translateX(-50%) rotate(180deg); }
 html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: block; width: 280px; left: 50%; bottom: -44px; transform: translateX(-50%); }
-.primary-button { border: 0; width: 100%; min-height: 58px; border-radius: 999px; background: var(--orange); color: white; font-size: 24px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; text-decoration: none; transition: transform .16s, filter .16s; }
+.primary-button { border: 0; width: 100%; min-height: 58px; border-radius: 999px; background: var(--orange); color: white; font-size: 24px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; text-decoration: none; transition: transform .09s, filter .09s; }
 .primary-button:hover { filter: brightness(.97); }
 .primary-button:active { transform: scale(.985); }
 .primary-button:disabled { opacity: .55; cursor: default; }
@@ -162,6 +163,35 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .verified-penguin { margin: 28px auto -10px; height: 320px; display: grid; place-items: center; overflow: hidden; }
 .verified-penguin img { width: 310px; height: auto; }
 
+.install-guide { min-height: 100svh; height: 100svh; overflow-y: auto; padding: 22px 24px 40px; scrollbar-width: none; }
+.install-guide::-webkit-scrollbar { display: none; }
+.install-header { text-align: center; position: relative; padding-top: 4px; }
+.install-back { position: absolute; z-index: 2; top: 0; left: 0; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--sand); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.install-back svg { width: 22px; }
+.install-penguin { width: 112px; height: 104px; margin: 0 auto 4px; overflow: hidden; border-radius: 50%; background: radial-gradient(circle, var(--penguin-glow), transparent 70%); display: grid; place-items: center; }
+.install-penguin img { width: 110px; height: auto; }
+.install-header > p { margin: 3px 0 4px; color: var(--muted); font-size: 15px; }
+.install-header h1 { margin: 0; font-size: clamp(36px, 9vw, 46px); line-height: 1; letter-spacing: -2px; }
+.install-header h1 span { color: var(--orange); }
+.install-header small { display: block; max-width: 330px; margin: 12px auto 0; color: var(--muted); font-size: 15px; line-height: 1.35; }
+.quick-install { min-height: 52px; margin-top: 20px; font-size: 17px; }
+.quick-install svg { width: 20px; }
+.install-tabs { margin-top: 24px; padding: 4px; border-radius: 18px; background: var(--sand); display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.install-tabs button { min-height: 44px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
+.install-tabs button.active { background: var(--cream); color: var(--orange); box-shadow: 0 4px 12px #2f21170f; }
+.browser-tabs { margin: 12px -4px 18px; padding: 0 4px 4px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.browser-tabs::-webkit-scrollbar { display: none; }
+.browser-tabs button { flex: 1 0 auto; min-height: 37px; padding: 0 15px; border: 1px solid var(--sand-2); border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
+.browser-tabs button.active { border-color: var(--orange); background: var(--selected); color: var(--orange); font-weight: 700; }
+.install-steps { display: grid; gap: 11px; }
+.install-steps article { min-height: 94px; padding: 14px; border-radius: 24px; background: var(--sand); display: flex; align-items: center; gap: 14px; }
+.install-step-picture { width: 66px; height: 66px; min-width: 66px; border-radius: 20px; background: var(--cream); color: var(--orange); display: grid; place-items: center; position: relative; box-shadow: 0 7px 14px #4d362611; }
+.install-step-picture > span { position: absolute; top: -5px; left: -5px; width: 24px; height: 24px; border-radius: 50%; background: var(--orange); color: white; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.install-step-picture svg { width: 31px; height: 31px; stroke-width: 1.9; }
+.install-steps h2 { margin: 0 0 4px; font-size: 18px; }
+.install-steps p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.3; }
+.install-finish { margin-top: 22px; min-height: 54px; font-size: 20px; }
+
 .about-shell { padding-top: 52px; overflow-y: auto; }
 .about-copy h1 { margin: 0 0 44px; font-size: clamp(40px, 10vw, 55px); font-weight: 700; letter-spacing: -2.5px; line-height: 1; }
 .about-copy h1 span { color: var(--orange); }
@@ -193,6 +223,11 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .progress-ring::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--progress-bg); }
 .progress-ring span { position: relative; z-index: 1; font-weight: 700; opacity: 1; }
 .section-title { margin: 30px 0 14px; font-size: 25px; }
+.reminder-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.edit-reminders { margin-top: 17px; padding: 8px 11px; border: 1px solid var(--sand-2); border-radius: 999px; background: var(--sand); color: var(--orange); display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.edit-reminders svg { width: 15px; height: 15px; }
+.edit-status { margin: -3px 0 12px; padding: 9px 12px; border-radius: 13px; background: var(--selected); color: var(--orange); font-size: 13px; text-align: center; }
+.edit-status.error { background: #ef7b6e1c; color: var(--coral); }
 .reminder-stack { display: grid; gap: 14px; }
 .reminder-card { border: 1px solid var(--sand-2); background: var(--sand); border-radius: 28px; padding: 18px; display: flex; gap: 14px; box-shadow: 0 5px 16px #674b3410; transition: opacity .2s; }
 .reminder-card.disabled { opacity: .55; }
@@ -201,12 +236,15 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .reminder-top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
 .reminder-top h3 { margin: 2px 0 2px; font-size: 23px; }
 .reminder-top p { margin: 0; color: var(--muted); font-size: 14px; }
+.reminder-state { flex: 0 0 auto; margin-top: 4px; padding: 5px 8px; border-radius: 999px; background: var(--cream); color: var(--muted); font-size: 10px; font-weight: 700; }
+.reminder-state.on { background: #f5660015; color: var(--orange); }
 .toggle-switch { width: 48px; height: 27px; min-width: 48px; min-height: 27px; padding: 2px; border: 0; border-radius: 999px; background: var(--sand-2); cursor: pointer; transition: background .18s; }
 .toggle-switch.checked { background: var(--orange); }
 .toggle-switch span { display: block; width: 23px; height: 23px; border-radius: 50%; background: var(--cream); transition: transform .18s; }
 .toggle-switch.checked span { transform: translateX(21px); }
 .time-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0; }
 .time-row span { background: var(--cream); border-radius: 999px; padding: 6px 10px; font-size: 13px; }
+.saved-times span { border: 1px solid var(--sand-2); font-weight: 700; }
 .editable-times .time-control { display: inline-flex; align-items: center; gap: 2px; padding: 0 3px 0 0; background: var(--cream); border: 1px solid var(--sand-2); }
 .editable-times input { position: relative; width: 70px; min-height: 34px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); padding: 5px 3px 5px 7px; font-size: 13px; text-align: center; outline: none; cursor: pointer; }
 .editable-times input:focus { box-shadow: 0 0 0 2px #f5660060; }
@@ -221,7 +259,10 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .check-button { width: 100%; min-height: 40px; border: 0; border-radius: 14px; background: var(--translucent); color: var(--ink); font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; }
 .check-button svg { width: 17px; }
 .check-button b { background: var(--orange); color: white; border-radius: 10px; min-width: 21px; padding: 2px 5px; }
-.reminder-save { margin-top: 34px; min-height: 56px; font-size: 21px; }
+.edit-actions { margin-top: 24px; display: grid; grid-template-columns: .65fr 1.35fr; gap: 10px; }
+.cancel-edit { min-height: 56px; border: 1px solid var(--sand-2); border-radius: 999px; background: var(--sand); color: var(--muted); font-size: 16px; cursor: pointer; }
+.cancel-edit:disabled { opacity: .55; }
+.reminder-save { margin-top: 0; min-height: 56px; font-size: 19px; }
 
 .bottom-nav { position: absolute; z-index: 20; bottom: 0; left: 0; right: 0; height: 92px; padding: 10px 7px max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 1fr); background: var(--nav-bg); backdrop-filter: blur(15px); border-top: 1px solid var(--sand-2); }
 .bottom-nav button { border: 0; background: transparent; color: #72665e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; font-size: 12px; }
@@ -306,6 +347,7 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
   .app-scroll::-webkit-scrollbar { display: none; }
   .bottom-nav { border-radius: 0 0 36px 36px; }
   .welcome-shell { overflow-y: auto; }
+  .install-guide { min-height: 100%; height: 100%; }
 }
 
 @media (max-width: 380px) {
