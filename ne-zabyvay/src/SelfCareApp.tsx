@@ -481,7 +481,8 @@ function TodayView({ data, setData, todayCheckins, post }: {
   const [isEditing, setIsEditing] = useState(false);
   const [editMessage, setEditMessage] = useState("");
   const [draftReminders, setDraftReminders] = useState<Reminder[]>(data.reminders);
-  const [undoCheckin, setUndoCheckin] = useState<{ checkin: Checkin; timer: number } | null>(null);
+  const [undoCheckin, setUndoCheckin] = useState<{ checkin: Checkin; timer: number; expiresAt: number } | null>(null);
+  const [undoSeconds, setUndoSeconds] = useState(0);
   const visibleReminders = isEditing ? draftReminders : data.reminders;
   const total = data.reminders.filter((item) => item.enabled).reduce((sum, item) => sum + item.times.length, 0);
   const progress = total ? Math.min(100, Math.round(todayCheckins.length / total * 100)) : 0;
@@ -548,7 +549,14 @@ function TodayView({ data, setData, todayCheckins, post }: {
       setSavingTimes(false);
     }
   };
-  const commitCheckin = (pending: { checkin: Checkin; timer: number }) => {
+  useEffect(() => {
+    if (!undoCheckin) { setUndoSeconds(0); return; }
+    const update = () => setUndoSeconds(Math.max(0, Math.ceil((undoCheckin.expiresAt - Date.now()) / 1000)));
+    update();
+    const interval = window.setInterval(update, 200);
+    return () => window.clearInterval(interval);
+  }, [undoCheckin]);
+  const commitCheckin = (pending: { checkin: Checkin; timer: number; expiresAt: number }) => {
     window.clearTimeout(pending.timer);
     void post({ action: "checkin", type: pending.checkin.type }, undefined, false);
   };
@@ -560,7 +568,7 @@ function TodayView({ data, setData, todayCheckins, post }: {
       void post({ action: "checkin", type: item.type }, undefined, false);
       setUndoCheckin((current) => current?.checkin.id === checkin.id ? null : current);
     }, 10000);
-    setUndoCheckin({ checkin, timer });
+    setUndoCheckin({ checkin, timer, expiresAt: Date.now() + 10000 });
   };
   const undoLastCheckin = () => {
     if (!undoCheckin) return;
@@ -602,7 +610,7 @@ function TodayView({ data, setData, todayCheckins, post }: {
               <button className="healthy-schedule" onClick={() => saveTimes(item, HEALTHY_TIMES[item.type])}>Предложить здоровый график</button>
             </> : <div className="time-row saved-times">{item.times.map((time) => <span key={`${item.id}-${time}`}>{time}</span>)}</div>}
             {!isEditing && (undoCheckin?.checkin.type === item.type
-              ? <button className="check-button undo-check-button" onClick={undoLastCheckin}><X /> Отменить отметку</button>
+              ? <button className="check-button undo-check-button" onClick={undoLastCheckin}><X /> Отменить · {undoSeconds} сек</button>
               : <button className="check-button" disabled={!item.enabled} onClick={() => markNow(item)}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>)}
           </div>
         </article>;
