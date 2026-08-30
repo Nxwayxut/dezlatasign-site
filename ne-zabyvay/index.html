@@ -4,14 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f56600" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Добрые напоминания о воде, еде и отдыхе" />
     <link rel="icon" href="./favicon.svg" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Не забывай</title>
-    <script type="module" crossorigin src="./assets/index-BUMMEqWV.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DFHg0FCK.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (() => {
+        const saved = localStorage.getItem("ne-zabyvay-theme");
+        document.documentElement.dataset.theme = saved === "dark" || saved === "light"
+          ? saved
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
