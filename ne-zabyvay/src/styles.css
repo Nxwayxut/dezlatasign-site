@@ -36,27 +36,27 @@
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --cream: #211a17;
-  --sand: #302621;
-  --sand-2: #493a32;
+  --cream: #342a25;
+  --sand: #44372f;
+  --sand-2: #5a493f;
   --ink: #fff7ef;
   --muted: #c5b7ab;
-  --background: #211a17;
+  --background: #342a25;
   --foreground: #fff7ef;
   --input: #493a32;
-  --outer-bg: #130f0d;
-  --body-start: #2b211d;
-  --body-end: #130f0d;
-  --soft-active: #3b2e28;
-  --selected: #432b20;
-  --keypad: #2c231f;
-  --translucent: #3b302bcf;
-  --nav-bg: #211a17f2;
-  --divider: #4c3c34;
-  --toast-bg: #51341f;
+  --outer-bg: #211a17;
+  --body-start: #493a32;
+  --body-end: #261e1a;
+  --soft-active: #4b3c34;
+  --selected: #513629;
+  --keypad: #40332d;
+  --translucent: #51423acf;
+  --nav-bg: #342a25f2;
+  --divider: #655247;
+  --toast-bg: #624029;
   --toast-ink: #ffd5b5;
-  --code-overlay: #211a17c9;
-  --penguin-glow: #4b3b33;
+  --code-overlay: #342a25d4;
+  --penguin-glow: #765f51;
   --legal-text: #d9ccc1;
   --progress-bg: #100d0b;
   --progress-ink: #fff7ef;
@@ -171,8 +171,8 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .goal-list { display: grid; gap: 12px; }
 .goal-list > button { width: 100%; min-height: 82px; padding: 11px 17px; border: 2px solid transparent; border-radius: 24px; background: var(--sand); display: flex; align-items: center; gap: 17px; color: var(--ink); text-align: left; font-size: 20px; cursor: pointer; }
 .goal-list > button.selected { border-color: #f566006e; background: var(--selected); }
-.goal-list > button .design-care-icon { width: 55px; height: 55px; min-width: 55px; }
-.goal-list > button span { flex: 1; }
+.goal-list > button .design-care-icon { width: 55px; height: 55px; min-width: 55px; flex: 0 0 55px; }
+.goal-list > button > span:not(.design-care-icon) { flex: 1; }
 .goal-list > button > svg { width: 22px; color: var(--orange); }
 .about-continue { margin-top: 42px; flex-shrink: 0; }
 
@@ -239,7 +239,7 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .history-item span { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .history-item > svg { width: 20px; color: var(--orange); }
 .empty-state { margin-top: 70px; text-align: center; }
-.empty-penguin { height: 145px; overflow: hidden; }
+.empty-penguin { width: 190px; height: 165px; margin: 0 auto; overflow: hidden; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, var(--penguin-glow), transparent 70%); }
 .empty-penguin img { width: 160px; height: auto; }
 .empty-state h2 { font-size: 25px; margin: 12px 0 6px; }
 .empty-state p { color: var(--muted); line-height: 1.45; max-width: 280px; margin: auto; }
