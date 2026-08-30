@@ -26,7 +26,7 @@ const HEALTHY_TIMES: Record<ReminderType, string[]> = {
   rest: ["13:00", "17:00"],
 };
 
-const API_URL = import.meta.env.VITE_API_URL || "https://script.google.com/macros/s/AKfycbyCX-p50ehRvPev2EyE_TRofkU2ygQZ1yV9Ufk7H2QKZnIcZJCQWNetGSVXxzow5kZu/exec";
+const API_URL = import.meta.env.VITE_API_URL || "https://script.google.com/macros/s/AKfycbxy_PDrNcLIGU05xQJMLB-XEXbtL6vY4NVj8ANHV79sLlwb98TKjOVsSU5U_NYcY1Y/exec";
 const TOKEN_KEY = "ne-zabyvay-session";
 const THEME_KEY = "ne-zabyvay-theme";
 const asset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
