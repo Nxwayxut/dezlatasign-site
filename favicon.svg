@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="18" fill="#e8ee74"/>
-  <rect x="7.5" y="7.5" width="49" height="49" rx="14.5" stroke="rgba(239,242,221,0.18)"/>
-  <text x="16" y="38" fill="#eff2dd" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="0.5">ZS.</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#f56600"/><circle cx="22" cy="28" r="8" fill="#fffaf5"/><circle cx="42" cy="28" r="8" fill="#fffaf5"/><path d="M27 38h10l-5 5z" fill="#ffb508"/></svg>
