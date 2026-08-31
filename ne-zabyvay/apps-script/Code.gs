@@ -202,7 +202,7 @@ function updateProfile_(email, body) {
   const goal = ["water", "food", "rest", "all"].indexOf(String(body.goal || "all")) >= 0 ? String(body.goal || "all") : "all";
   const current = findBy_("Profiles", "email", email);
   const requestedAvatar = String(body.avatarId || (current && current.avatarId) || "classic");
-  const avatarId = ["classic", "orange", "coral", "berry", "plum", "blue", "teal", "sage", "mustard", "cocoa"].indexOf(requestedAvatar) >= 0 ? requestedAvatar : "classic";
+  const avatarId = ["classic", "dusty-red", "dreamcicle", "dandelion", "spring-green", "blue-lagoon", "plum-purple", "raspberry", "candy-floss", "blue-hawaii"].indexOf(requestedAvatar) >= 0 ? requestedAvatar : "classic";
   if (!displayName) throw new Error("Введи имя");
   const update = { displayName: displayName, goal: goal, avatarId: avatarId, updatedAt: new Date().toISOString() };
   if (body.onboardingCompleted === true) update.onboardingCompleted = true;
