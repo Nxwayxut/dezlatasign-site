@@ -217,8 +217,10 @@ function normalizeData(payload: AppData): AppData {
     ...payload,
     reminders: (payload.reminders || []).map((item) => ({
       ...item,
-      category: item.category || REMINDER_COPY[item.type]?.category || "basic",
-      description: item.description || REMINDER_COPY[item.type]?.text || "",
+      category: REMINDER_COPY[item.type]?.category || (["basic", "hygiene", "weight"].includes(item.category) ? item.category : "basic"),
+      title: REMINDER_COPY[item.type]?.title || item.title,
+      description: REMINDER_COPY[item.type]?.text || item.description || "",
+      times: Array.isArray(item.times) && item.times.every((time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time)) ? item.times : ["09:00"],
       days: item.days?.length ? item.days : [0, 1, 2, 3, 4, 5, 6],
     })),
     checkins: payload.checkins || [],
@@ -228,8 +230,8 @@ function normalizeData(payload: AppData): AppData {
   };
 }
 
-function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
-  return <button type="button" className={`toggle-switch ${checked ? "checked" : ""}`} aria-pressed={checked} aria-label={label} onClick={() => onChange(!checked)}><span /></button>;
+function ToggleSwitch({ checked, onChange, label, disabled = false }: { checked: boolean; onChange: (checked: boolean) => void; label: string; disabled?: boolean }) {
+  return <button type="button" disabled={disabled} className={`toggle-switch ${checked ? "checked" : ""}`} aria-pressed={checked} aria-label={label} onClick={() => onChange(!checked)}><span /></button>;
 }
 
 export function SelfCareApp() {
@@ -685,7 +687,7 @@ function ReminderCatalog({ category, data, setData, setMessage }: {
       reminder={item}
       expanded={expandedId === item.id}
       onExpand={() => setExpandedId((current) => current === item.id ? null : item.id)}
-      onSave={(next, previous, success) => void save(next, previous, success)}
+      onSave={(next, previous, success) => save(next, previous, success)}
     />)}</div>
   </section>;
 }
@@ -694,10 +696,17 @@ function ReminderSetupCard({ reminder, expanded, onExpand, onSave }: {
   reminder: Reminder;
   expanded: boolean;
   onExpand: () => void;
-  onSave: (next: Reminder, previous: Reminder, success?: string) => void;
+  onSave: (next: Reminder, previous: Reminder, success?: string) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(reminder);
+  const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(reminder), [reminder]);
+  const saveReminder = async (next: Reminder, previous: Reminder, success?: string) => {
+    if (saving) return;
+    setSaving(true);
+    try { await onSave(next, previous, success); }
+    finally { setSaving(false); }
+  };
   const addTime = () => {
     const used = new Set(draft.times);
     const last = draft.times[draft.times.length - 1] || "07:00";
@@ -708,7 +717,7 @@ function ReminderSetupCard({ reminder, expanded, onExpand, onSave }: {
   };
   const daySummary = draft.days.length === 7 ? "каждый день" : WEEKDAYS.filter((day) => draft.days.includes(day.id)).map((day) => day.short).join(", ");
   return <article className={`habit-setup-card ${reminder.enabled ? "enabled" : ""}`}>
-    <div className="habit-setup-top"><CareIcon type={reminder.type} /><div><h3>{reminder.title}</h3><p>{reminder.description || reminderInfo(reminder).text}</p></div><ToggleSwitch checked={reminder.enabled} label={`Включить ${reminder.title}`} onChange={(enabled) => onSave({ ...reminder, enabled }, reminder, enabled ? "Напоминание включено" : "Напоминание выключено")} /></div>
+    <div className="habit-setup-top"><CareIcon type={reminder.type} /><div><h3>{reminderInfo(reminder).title}</h3><p>{reminderInfo(reminder).text}</p></div><ToggleSwitch checked={reminder.enabled} disabled={saving} label={`Включить ${reminderInfo(reminder).title}`} onChange={(enabled) => void saveReminder({ ...reminder, enabled }, reminder, enabled ? "Напоминание включено" : "Напоминание выключено")} /></div>
     {reminder.enabled && <button type="button" className="schedule-summary" onClick={onExpand}><Clock3 /><span>{reminder.times.join(" · ")}<small>{daySummary}</small></span><ChevronRight className={expanded ? "rotated" : ""} /></button>}
     {reminder.enabled && expanded && <div className="schedule-editor">
       <strong>Время</strong>
@@ -719,7 +728,7 @@ function ReminderSetupCard({ reminder, expanded, onExpand, onSave }: {
         const selected = current.days.includes(day.id) ? current.days.filter((value) => value !== day.id) : [...current.days, day.id];
         return { ...current, days: selected.length ? selected : current.days };
       })}>{day.short}</button>)}</div>
-      <button type="button" className="save-schedule" onClick={() => { onSave({ ...draft, times: [...new Set(draft.times)].sort().slice(0, 10), days: [...draft.days].sort() }, reminder); onExpand(); }}><Save /> Сохранить расписание</button>
+      <button type="button" className="save-schedule" disabled={saving} onClick={async () => { await saveReminder({ ...draft, times: [...new Set(draft.times)].sort().slice(0, 10), days: [...draft.days].sort() }, reminder); onExpand(); }}><Save /> {saving ? "Сохраняю…" : "Сохранить расписание"}</button>
     </div>}
   </article>;
 }
