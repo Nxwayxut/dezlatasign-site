@@ -99,9 +99,9 @@ const asset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
 
 class ApiError extends Error {}
 
-async function backend(body: Record<string, unknown>) {
+async function backend(body: Record<string, unknown>, timeoutMs = 20000) {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 15000);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(API_URL, {
       method: "POST",
@@ -118,6 +118,14 @@ async function backend(body: Record<string, unknown>) {
     }
     if (!response.ok || payload.ok === false) throw new ApiError(String(payload.error || "Не удалось связаться с базой"));
     return payload;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("База отвечает слишком долго. Подожди немного и попробуй ещё раз");
+    }
+    if (error instanceof TypeError) {
+      throw new ApiError("Не удалось связаться с базой. Проверь интернет и попробуй ещё раз");
+    }
+    throw error;
   } finally {
     window.clearTimeout(timeout);
   }
@@ -242,9 +250,12 @@ export function SelfCareApp() {
     let active = true;
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) { setAuthReady(true); return; }
-    backend({ action: "me", token })
+    backend({ action: "me", token }, 8000)
       .then((payload) => { if (active) setUser((payload.user as User | undefined) || null); })
-      .catch(() => { if (active) setUser(null); })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        if (active) setUser(null);
+      })
       .finally(() => active && setAuthReady(true));
     return () => { active = false; };
   }, []);

@@ -4,6 +4,12 @@ const OTP_MINUTES = 10;
 const OTP_RESEND_SECONDS = 45;
 const OTP_DAILY_LIMIT = 10;
 
+// Apps Script keeps these values only for the duration of one server request.
+// Reusing the spreadsheet and its sheets avoids opening the same database
+// dozens of times during a single action.
+let DB_CACHE_ = null;
+const SHEET_CACHE_ = {};
+
 const TABLES = {
   Profiles: ["email", "displayName", "goal", "notificationsEnabled", "onboardingCompleted", "createdAt", "updatedAt", "avatarId"],
   Reminders: ["id", "ownerEmail", "type", "category", "title", "description", "timesJson", "daysJson", "enabled", "createdAt", "updatedAt"],
@@ -87,6 +93,10 @@ function startOtp_(body) {
     if (previous && Number(previous.resendAfter) > now) throw new Error("Новый код можно запросить чуть позже");
     const sentCount = previous && previous.sentDate === today ? Number(previous.sentCount || 0) + 1 : 1;
     if (sentCount > OTP_DAILY_LIMIT) throw new Error("На эту почту сегодня отправлено слишком много кодов");
+
+    if (MailApp.getRemainingDailyQuota() < 1) {
+      throw new Error("Лимит писем Google на сегодня закончился. Попробуй завтра");
+    }
 
     const code = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
     upsert_("Otps", "email", email, {
@@ -360,6 +370,7 @@ function userFromProfile_(profile) {
 }
 
 function getDatabase_() {
+  if (DB_CACHE_) return DB_CACHE_;
   const props = PropertiesService.getScriptProperties();
   let id = props.getProperty("DB_SPREADSHEET_ID");
   let db;
@@ -386,13 +397,16 @@ function getDatabase_() {
   });
   const first = db.getSheetByName("Sheet1") || db.getSheetByName("Лист1");
   if (first && Object.keys(TABLES).indexOf(first.getName()) === -1 && db.getSheets().length > Object.keys(TABLES).length) db.deleteSheet(first);
-  return db;
+  DB_CACHE_ = db;
+  return DB_CACHE_;
 }
 
 function sheet_(name) {
+  if (SHEET_CACHE_[name]) return SHEET_CACHE_[name];
   const sheet = getDatabase_().getSheetByName(name);
   if (!sheet) throw new Error("Не найдена таблица " + name);
-  return sheet;
+  SHEET_CACHE_[name] = sheet;
+  return SHEET_CACHE_[name];
 }
 
 function rows_(name) {
