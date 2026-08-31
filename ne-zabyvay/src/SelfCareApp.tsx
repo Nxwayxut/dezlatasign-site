@@ -23,15 +23,15 @@ type InstallPromptEvent = Event & {
 
 const AVATARS = [
   { id: "classic", label: "Классический", color: "#241A14" },
-  { id: "orange", label: "Апельсиновый", color: "#C65B2E" },
-  { id: "coral", label: "Коралловый", color: "#C94F54" },
-  { id: "berry", label: "Ягодный", color: "#9D4A67" },
-  { id: "plum", label: "Сливовый", color: "#6E4A8E" },
-  { id: "blue", label: "Синий", color: "#416B8C" },
-  { id: "teal", label: "Бирюзовый", color: "#2C7A78" },
-  { id: "sage", label: "Шалфейный", color: "#6D8352" },
-  { id: "mustard", label: "Горчичный", color: "#B17B23" },
-  { id: "cocoa", label: "Какао", color: "#7A533B" },
+  { id: "dusty-red", label: "Пыльная роза", color: "#F4607B" },
+  { id: "dreamcicle", label: "Персиковый", color: "#F99E85" },
+  { id: "dandelion", label: "Одуванчик", color: "#F6D781" },
+  { id: "spring-green", label: "Весенний", color: "#78C681" },
+  { id: "blue-lagoon", label: "Лагуна", color: "#5A9AD6" },
+  { id: "plum-purple", label: "Сливовый", color: "#594EAD" },
+  { id: "raspberry", label: "Малиновый", color: "#FF3197" },
+  { id: "candy-floss", label: "Сладкая вата", color: "#FF99DF" },
+  { id: "blue-hawaii", label: "Голубой", color: "#6CEBEF" },
 ] as const;
 type AvatarId = typeof AVATARS[number]["id"];
 
@@ -112,7 +112,8 @@ function PenguinAvatar({ avatarId, className = "", alt = "Пингвин" }: { a
       canvas.width = size;
       canvas.height = size;
       context.clearRect(0, 0, size, size);
-      context.drawImage(image, 0, 0, size, size);
+      const cropSize = image.width * .52;
+      context.drawImage(image, image.width * .24, image.height * .1, cropSize, cropSize, 0, 0, size, size);
       if (avatar.id === "classic") return;
 
       const pixels = context.getImageData(0, 0, size, size);
@@ -125,8 +126,8 @@ function PenguinAvatar({ avatarId, className = "", alt = "Пингвин" }: { a
         const green = pixels.data[index + 1];
         const blue = pixels.data[index + 2];
         const alpha = pixels.data[index + 3];
-        const leftEye = ((x - .379) / .075) ** 2 + ((y - .326) / .075) ** 2 < 1;
-        const rightEye = ((x - .621) / .075) ** 2 + ((y - .326) / .075) ** 2 < 1;
+        const leftEye = ((x - .267) / .145) ** 2 + ((y - .435) / .145) ** 2 < 1;
+        const rightEye = ((x - .733) / .145) ** 2 + ((y - .435) / .145) ** 2 < 1;
         const bodyPixel = alpha > 10 && red < 80 && green < 68 && blue < 62 && Math.max(red, green, blue) - Math.min(red, green, blue) < 38;
         if (!bodyPixel || leftEye || rightEye) continue;
         const shade = Math.max(.72, Math.min(1.14, (red + green + blue) / 86));
