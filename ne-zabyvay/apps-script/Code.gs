@@ -3,20 +3,20 @@ const SESSION_DAYS = 30;
 const OTP_MINUTES = 10;
 const OTP_RESEND_SECONDS = 45;
 const OTP_DAILY_LIMIT = 10;
-const DB_SCHEMA_VERSION = "2026-08-reminders-v2";
+const PASSWORD_ROUNDS = 2500;
+const PASSWORD_MAX_ATTEMPTS = 5;
+const PASSWORD_LOCK_MINUTES = 15;
+const DB_SCHEMA_VERSION = "2026-08-auth-reminders-v3";
 
-// Apps Script keeps these values only for the duration of one server request.
-// Reusing the spreadsheet and its sheets avoids opening the same database
-// dozens of times during a single action.
 let DB_CACHE_ = null;
 const SHEET_CACHE_ = {};
 
 const TABLES = {
-  Profiles: ["email", "displayName", "goal", "notificationsEnabled", "onboardingCompleted", "createdAt", "updatedAt", "avatarId"],
+  Profiles: ["email", "displayName", "goal", "notificationsEnabled", "onboardingCompleted", "createdAt", "updatedAt", "avatarId", "passwordHash", "passwordSalt", "passwordFailedAttempts", "passwordLockedUntil", "passwordUpdatedAt"],
   Reminders: ["id", "ownerEmail", "type", "category", "title", "description", "timesJson", "daysJson", "enabled", "createdAt", "updatedAt"],
   Checkins: ["id", "ownerEmail", "type", "completedAt"],
   Sessions: ["tokenHash", "email", "expiresAt", "createdAt"],
-  Otps: ["email", "codeHash", "attempts", "expiresAt", "resendAfter", "sentDate", "sentCount", "createdAt"],
+  Otps: ["email", "codeHash", "attempts", "expiresAt", "resendAfter", "sentDate", "sentCount", "createdAt", "mode"],
   WeightSettings: ["ownerEmail", "enabled", "mode", "goalKg", "calorieMode", "updatedAt"],
   WeightEntries: ["id", "ownerEmail", "weightKg", "recordedAt"],
   FoodEntries: ["id", "ownerEmail", "mealType", "title", "calories", "hunger", "fullness", "reason", "recordedAt"],
@@ -35,12 +35,12 @@ const DEFAULT_REMINDERS = [
   { type: "towel", category: "hygiene", title: "Сменить полотенце", description: "Еженедельное напоминание", times: ["11:00"], days: [6], enabled: false },
   { type: "linen", category: "hygiene", title: "Сменить постельное бельё", description: "Выбери удобный день недели", times: ["11:30"], days: [0], enabled: false },
   { type: "nails", category: "hygiene", title: "Уход за ногтями", description: "Без строгого расписания", times: ["18:00"], days: [0], enabled: false },
-  { type: "walk", category: "weight", title: "Немного пройтись", description: "Движение без наказаний за еду", times: ["18:30"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
-  { type: "sleep", category: "weight", title: "Подготовиться ко сну", description: "Сон тоже влияет на самочувствие", times: ["22:30"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
-  { type: "stress-pause", category: "weight", title: "Сделать паузу", description: "Проверить усталость и стресс без оценки", times: ["16:00"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
-  { type: "food-diary", category: "weight", title: "Заполнить дневник питания", description: "Записать день без оценок и стыда", times: ["20:30"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
-  { type: "weigh-in", category: "weight", title: "Отметить вес", description: "Смотреть на тенденцию, а не на один день", times: ["08:00"], days: [1], enabled: false },
+  { type: "walk", category: "weight", title: "Немного пройтись", description: "Помогу не забыть немного прогуляться", times: ["18:30"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
+  { type: "sleep", category: "weight", title: "Подготовиться ко сну", description: "Напомню спокойно завершить день", times: ["22:30"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
+  { type: "exercise", category: "weight", title: "Сделать упражнение", description: "", times: ["18:00"], days: [1, 3, 5], enabled: false },
 ];
+
+const ACTIVE_REMINDER_TYPES = DEFAULT_REMINDERS.map(function (item) { return item.type; });
 
 function setup() {
   const db = getDatabase_();
@@ -57,10 +57,12 @@ function doPost(e) {
     const action = String(body.action || "");
     if (action === "startOtp") return json_(startOtp_(body));
     if (action === "verifyOtp") return json_(verifyOtp_(body));
+    if (action === "loginPassword") return json_(loginPassword_(body));
     if (action === "me") return json_(me_(body));
     if (action === "logout") return json_(logout_(body));
 
     const email = requireUser_(body.token);
+    if (action === "setPassword") return json_(setPassword_(email, body));
     if (action === "getData") return json_(getData_(email));
     if (action === "toggle") return json_(toggleReminder_(email, body));
     if (action === "times") return json_(updateTimes_(email, body));
@@ -83,7 +85,12 @@ function doPost(e) {
 
 function startOtp_(body) {
   const email = String(body.email || "").trim().toLowerCase();
+  const mode = body.mode === "signup" ? "signup" : "login";
   if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Проверь адрес почты");
+
+  const existingProfile = findBy_("Profiles", "email", email);
+  if (mode === "signup" && existingProfile) throw new Error("Аккаунт с этой почтой уже есть. Нажми «У меня уже есть аккаунт»");
+  if (mode === "login" && !existingProfile) throw new Error("Аккаунт с такой почтой не найден");
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -94,10 +101,7 @@ function startOtp_(body) {
     if (previous && Number(previous.resendAfter) > now) throw new Error("Новый код можно запросить чуть позже");
     const sentCount = previous && previous.sentDate === today ? Number(previous.sentCount || 0) + 1 : 1;
     if (sentCount > OTP_DAILY_LIMIT) throw new Error("На эту почту сегодня отправлено слишком много кодов");
-
-    if (MailApp.getRemainingDailyQuota() < 1) {
-      throw new Error("Лимит писем Google на сегодня закончился. Попробуй завтра");
-    }
+    if (MailApp.getRemainingDailyQuota() < 1) throw new Error("Лимит писем Google на сегодня закончился. Попробуй завтра");
 
     const code = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
     upsert_("Otps", "email", email, {
@@ -109,6 +113,7 @@ function startOtp_(body) {
       sentDate: today,
       sentCount: sentCount,
       createdAt: new Date().toISOString(),
+      mode: mode,
     });
 
     MailApp.sendEmail({
@@ -141,21 +146,69 @@ function verifyOtp_(body) {
       updateBy_("Otps", "email", email, { attempts: Number(row.attempts || 0) + 1 });
       throw new Error("Код не подошёл. Проверь цифры");
     }
-
-    const token = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
-    append_("Sessions", {
-      tokenHash: hash_(token),
-      email: email,
-      expiresAt: Date.now() + SESSION_DAYS * 86400000,
-      createdAt: new Date().toISOString(),
-    });
+    const mode = row.mode === "signup" ? "signup" : "login";
+    let profile = findBy_("Profiles", "email", email);
+    if (mode === "login" && !profile) throw new Error("Аккаунт с такой почтой не найден");
+    if (!profile) profile = ensureUser_(email);
+    const token = createSession_(email);
     deleteBy_("Otps", "email", email);
-    const profile = ensureUser_(email);
     cleanupSessions_();
     return { ok: true, token: token, user: userFromProfile_(profile) };
   } finally {
     lock.releaseLock();
   }
+}
+
+function loginPassword_(body) {
+  const email = String(body.email || "").trim().toLowerCase();
+  const password = String(body.password || "");
+  if (!/^\S+@\S+\.\S+$/.test(email) || !password) throw new Error("Проверь почту и пароль");
+  const profile = findBy_("Profiles", "email", email);
+  if (!profile || !profile.passwordHash || !profile.passwordSalt) throw new Error("Для этого аккаунта пароль ещё не создан. Войди по коду из письма");
+  if (Number(profile.passwordLockedUntil || 0) > Date.now()) throw new Error("Слишком много попыток. Попробуй через 15 минут или войди по коду");
+
+  const matches = secureEqual_(String(profile.passwordHash), passwordHash_(email, password, String(profile.passwordSalt)));
+  if (!matches) {
+    const attempts = Number(profile.passwordFailedAttempts || 0) + 1;
+    updateBy_("Profiles", "email", email, {
+      passwordFailedAttempts: attempts >= PASSWORD_MAX_ATTEMPTS ? 0 : attempts,
+      passwordLockedUntil: attempts >= PASSWORD_MAX_ATTEMPTS ? Date.now() + PASSWORD_LOCK_MINUTES * 60000 : "",
+      updatedAt: new Date().toISOString(),
+    });
+    if (attempts >= PASSWORD_MAX_ATTEMPTS) throw new Error("Слишком много попыток. Вход по паролю заблокирован на 15 минут");
+    throw new Error("Неверная почта или пароль");
+  }
+
+  updateBy_("Profiles", "email", email, { passwordFailedAttempts: 0, passwordLockedUntil: "", updatedAt: new Date().toISOString() });
+  const token = createSession_(email);
+  cleanupSessions_();
+  return { ok: true, token: token, user: userFromProfile_(profile) };
+}
+
+function setPassword_(email, body) {
+  const password = String(body.password || "");
+  if (password.length < 8 || password.length > 64) throw new Error("Пароль должен содержать от 8 до 64 символов");
+  const salt = Utilities.getUuid().replace(/-/g, "");
+  updateBy_("Profiles", "email", email, {
+    passwordHash: passwordHash_(email, password, salt),
+    passwordSalt: salt,
+    passwordFailedAttempts: 0,
+    passwordLockedUntil: "",
+    passwordUpdatedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+  return { ok: true };
+}
+
+function createSession_(email) {
+  const token = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
+  append_("Sessions", {
+    tokenHash: hash_(token),
+    email: email,
+    expiresAt: Date.now() + SESSION_DAYS * 86400000,
+    createdAt: new Date().toISOString(),
+  });
+  return token;
 }
 
 function me_(body) {
@@ -171,7 +224,9 @@ function logout_(body) {
 
 function getData_(email) {
   const profile = ensureUser_(email);
-  const reminders = rows_("Reminders").filter(function (row) { return row.ownerEmail === email; }).map(function (row) {
+  const reminders = rows_("Reminders").filter(function (row) {
+    return row.ownerEmail === email && ACTIVE_REMINDER_TYPES.indexOf(String(row.type)) >= 0;
+  }).map(function (row) {
     const template = reminderTemplate_(row.type);
     return {
       id: row.id, type: row.type, category: row.category || template.category || "basic", title: row.title,
@@ -226,7 +281,12 @@ function updateReminder_(email, body) {
   }).sort() : safeJson_(row.daysJson, [0, 1, 2, 3, 4, 5, 6]);
   if (!times.length) throw new Error("Добавь хотя бы одно время");
   if (!days.length) throw new Error("Выбери хотя бы один день");
-  updateBy_("Reminders", "id", row.id, { enabled: body.enabled === true, timesJson: JSON.stringify(times), daysJson: JSON.stringify(days), updatedAt: new Date().toISOString() });
+  const updates = { enabled: body.enabled === true, timesJson: JSON.stringify(times), daysJson: JSON.stringify(days), updatedAt: new Date().toISOString() };
+  if (String(row.type) === "exercise") {
+    const exercise = String(body.description || "").trim().slice(0, 60);
+    updates.description = exercise;
+  }
+  updateBy_("Reminders", "id", row.id, updates);
   return { ok: true };
 }
 
@@ -321,6 +381,11 @@ function ensureUser_(email) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       avatarId: "classic",
+      passwordHash: "",
+      passwordSalt: "",
+      passwordFailedAttempts: 0,
+      passwordLockedUntil: "",
+      passwordUpdatedAt: "",
     };
     append_("Profiles", profile);
   }
@@ -367,7 +432,7 @@ function normalizeProfile_(profile) {
 }
 
 function userFromProfile_(profile) {
-  return { email: profile.email, displayName: profile.displayName, fullName: null };
+  return { email: profile.email, displayName: profile.displayName, fullName: null, hasPassword: Boolean(profile.passwordHash) };
 }
 
 function getDatabase_() {
@@ -394,11 +459,6 @@ function getDatabase_() {
   return DB_CACHE_;
 }
 
-// Keeps every sheet in the exact order described in TABLES. Earlier versions
-// appended new reminder columns to the right of the old table, while the app
-// wrote rows in the new order. That made "weight" appear as a title, an ISO
-// date appear as a description and an enabled reminder disappear from its
-// category. This migration repairs those rows without resetting user choices.
 function ensureSheetSchema_(sheet, name, forceNormalize) {
   const desiredHeaders = TABLES[name];
   if (sheet.getLastRow() === 0) {
@@ -459,7 +519,7 @@ function repairReminderRow_(row) {
   if (template.type) {
     row.category = template.category;
     row.title = template.title;
-    row.description = template.description;
+    if (template.type !== "exercise") row.description = template.description;
     if (!isJsonArray_(row.timesJson)) row.timesJson = JSON.stringify(template.times);
     if (!isJsonArray_(row.daysJson)) row.daysJson = JSON.stringify(template.days);
     row.enabled = asBool_(row.enabled);
@@ -530,6 +590,27 @@ function hash_(value) {
     const normalized = byte < 0 ? byte + 256 : byte;
     return ("0" + normalized.toString(16)).slice(-2);
   }).join("");
+}
+
+function passwordHash_(email, password, salt) {
+  const props = PropertiesService.getScriptProperties();
+  let pepper = props.getProperty("PASSWORD_PEPPER");
+  if (!pepper) {
+    pepper = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
+    props.setProperty("PASSWORD_PEPPER", pepper);
+  }
+  let value = String(email) + ":" + String(salt) + ":" + String(password) + ":" + pepper;
+  for (let index = 0; index < PASSWORD_ROUNDS; index += 1) value = hash_(value + ":" + salt + ":" + index);
+  return value;
+}
+
+function secureEqual_(left, right) {
+  const a = String(left || "");
+  const b = String(right || "");
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let index = 0; index < a.length; index += 1) difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  return difference === 0;
 }
 
 function safeJson_(value, fallback) {
