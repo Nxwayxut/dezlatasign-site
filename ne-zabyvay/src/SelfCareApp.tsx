@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, BarChart3, Bell, Check, CheckCircle2, ChevronRight, Clock3, Delete,
   Download, Home, LoaderCircle, LogOut, Moon, MoreVertical, Pencil, Plus, Save,
@@ -9,7 +9,7 @@ type User = { displayName: string; email: string; fullName: string | null };
 type ReminderType = "water" | "food" | "rest";
 type Reminder = { id: string; type: ReminderType; title: string; times: string[]; enabled: boolean };
 type Checkin = { id: string; type: ReminderType; completedAt: string };
-type Profile = { email: string; displayName: string; goal: string; notificationsEnabled: boolean; onboardingCompleted: boolean };
+type Profile = { email: string; displayName: string; goal: string; notificationsEnabled: boolean; onboardingCompleted: boolean; avatarId: AvatarId };
 type AppData = { profile: Profile; reminders: Reminder[]; checkins: Checkin[] };
 type Tab = "today" | "history" | "stats" | "profile";
 type Theme = "light" | "dark";
@@ -20,6 +20,24 @@ type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
+
+const AVATARS = [
+  { id: "classic", label: "Классический", color: "#241A14" },
+  { id: "orange", label: "Апельсиновый", color: "#C65B2E" },
+  { id: "coral", label: "Коралловый", color: "#C94F54" },
+  { id: "berry", label: "Ягодный", color: "#9D4A67" },
+  { id: "plum", label: "Сливовый", color: "#6E4A8E" },
+  { id: "blue", label: "Синий", color: "#416B8C" },
+  { id: "teal", label: "Бирюзовый", color: "#2C7A78" },
+  { id: "sage", label: "Шалфейный", color: "#6D8352" },
+  { id: "mustard", label: "Горчичный", color: "#B17B23" },
+  { id: "cocoa", label: "Какао", color: "#7A533B" },
+] as const;
+type AvatarId = typeof AVATARS[number]["id"];
+
+function avatarById(value?: string) {
+  return AVATARS.find((avatar) => avatar.id === value) || AVATARS[0];
+}
 
 const META = {
   water: { title: "Вода", text: "Напомню не забыть про воду", color: "blue" },
@@ -76,6 +94,53 @@ function DesignPenguin({ variant }: { variant: "main" | "account" | "email" }) {
     {variant !== "main" && <img className="penguin-original" src={source} alt="" />}
     <img className="penguin-transparent" src={asset("penguin-transparent.png")} alt="" />
   </div>;
+}
+
+function PenguinAvatar({ avatarId, className = "", alt = "Пингвин" }: { avatarId?: string; className?: string; alt?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const avatar = avatarById(avatarId);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return;
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => {
+      const size = 256;
+      canvas.width = size;
+      canvas.height = size;
+      context.clearRect(0, 0, size, size);
+      context.drawImage(image, 0, 0, size, size);
+      if (avatar.id === "classic") return;
+
+      const pixels = context.getImageData(0, 0, size, size);
+      const target = avatar.color.match(/[a-f\d]{2}/gi)?.map((part) => Number.parseInt(part, 16)) || [36, 26, 20];
+      for (let index = 0; index < pixels.data.length; index += 4) {
+        const pixel = index / 4;
+        const x = (pixel % size) / size;
+        const y = Math.floor(pixel / size) / size;
+        const red = pixels.data[index];
+        const green = pixels.data[index + 1];
+        const blue = pixels.data[index + 2];
+        const alpha = pixels.data[index + 3];
+        const leftEye = ((x - .379) / .075) ** 2 + ((y - .326) / .075) ** 2 < 1;
+        const rightEye = ((x - .621) / .075) ** 2 + ((y - .326) / .075) ** 2 < 1;
+        const bodyPixel = alpha > 10 && red < 80 && green < 68 && blue < 62 && Math.max(red, green, blue) - Math.min(red, green, blue) < 38;
+        if (!bodyPixel || leftEye || rightEye) continue;
+        const shade = Math.max(.72, Math.min(1.14, (red + green + blue) / 86));
+        pixels.data[index] = Math.min(255, target[0] * shade);
+        pixels.data[index + 1] = Math.min(255, target[1] * shade);
+        pixels.data[index + 2] = Math.min(255, target[2] * shade);
+      }
+      context.putImageData(pixels, 0, 0);
+    };
+    image.src = asset("penguin-transparent.png");
+    return () => { image.onload = null; };
+  }, [avatar.color, avatar.id]);
+
+  return <canvas ref={canvasRef} className={`penguin-avatar-canvas ${className}`} role="img" aria-label={alt} />;
 }
 
 async function api(body?: Record<string, unknown>) {
@@ -569,7 +634,7 @@ function TodayView({ data, setData, todayCheckins }: {
   return <div className="screen">
     <header className="screen-header greeting">
       <div><p>Сегодня</p><h1>Привет, {data.profile.displayName}!</h1></div>
-      <div className="mini-penguin"><img src={asset("penguin-transparent.png")} alt="" /></div>
+      <div className="mini-penguin"><PenguinAvatar avatarId={data.profile.avatarId} alt="" /></div>
     </header>
     <section className="progress-card">
       <div><strong>{todayCheckins.length} из {total}</strong><span>маленьких забот выполнено</span></div>
@@ -679,6 +744,7 @@ function StatsView({ checkins }: { checkins: Checkin[] }) {
 function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpenInstall, onSignOut }: { data: AppData; setData: React.Dispatch<React.SetStateAction<AppData | null>>; user: User; saving: boolean; post: (body: Record<string, unknown>, success?: string, refresh?: boolean) => Promise<void>; theme: Theme; setTheme: (theme: Theme) => void; onOpenInstall: () => void; onSignOut: () => void }) {
   const [name, setName] = useState(data.profile.displayName);
   const [goal, setGoal] = useState(data.profile.goal);
+  const [avatarId, setAvatarId] = useState<AvatarId>(avatarById(data.profile.avatarId).id);
   const notificationStatus = typeof window !== "undefined" && "Notification" in window
     ? Notification.permission === "granted" ? "Разрешены" : "Нажми, чтобы включить"
     : "Сначала добавь приложение на экран";
@@ -688,13 +754,21 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
     if (permission !== "granted") return;
     const registration = await navigator.serviceWorker.ready;
     registration.active?.postMessage({ type: "SHOW_REMINDER", title: "Ура, всё работает!", body: "Теперь я смогу мягко напоминать о заботе", tag: "welcome-notification" });
-    await post({ action: "profile", displayName: name, goal }, "Уведомления включены", false);
+    await post({ action: "profile", displayName: name, goal, avatarId }, "Уведомления включены", false);
+  };
+  const chooseAvatar = (nextAvatar: AvatarId) => {
+    setAvatarId(nextAvatar);
+    setData((current) => current ? { ...current, profile: { ...current.profile, avatarId: nextAvatar } } : current);
+    void post({ action: "profile", displayName: name, goal, avatarId: nextAvatar }, "Пингвин переоделся", false);
   };
   const saveProfile = () => {
-    setData((current) => current ? { ...current, profile: { ...current.profile, displayName: name, goal } } : current);
-    void post({ action: "profile", displayName: name, goal }, "Профиль сохранён", false);
+    setData((current) => current ? { ...current, profile: { ...current.profile, displayName: name, goal, avatarId } } : current);
+    void post({ action: "profile", displayName: name, goal, avatarId }, "Профиль сохранён", false);
   };
-  return <div className="screen"><header className="screen-header profile-head"><div className="profile-avatar"><UserRound /></div><div><p>{user.email}</p><h1>{name}</h1></div></header>
+  return <div className="screen"><header className="screen-header profile-head"><div className="profile-avatar"><PenguinAvatar avatarId={avatarId} /></div><div><p>{user.email}</p><h1>{name}</h1></div></header>
+    <section className="avatar-card"><div className="avatar-card-title"><strong>Твой пингвин</strong><span>Выбери цвет</span></div>
+      <div className="avatar-grid">{AVATARS.map((avatar) => <button type="button" key={avatar.id} className={avatarId === avatar.id ? "selected" : ""} aria-label={avatar.label} aria-pressed={avatarId === avatar.id} onClick={() => chooseAvatar(avatar.id)}><PenguinAvatar avatarId={avatar.id} alt="" />{avatarId === avatar.id && <Check />}</button>)}</div>
+    </section>
     <section className="settings-card"><label>Как к тебе обращаться?<input value={name} onChange={(event) => setName(event.target.value)} maxLength={40} /></label>
       <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="water">Пить больше воды</option><option value="food">Регулярно кушать</option><option value="rest">Больше отдыхать</option></select></label>
       <button className="primary-button save-button" disabled={saving} onClick={saveProfile}><Save /> Сохранить</button>
