@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BarChart3, Bell, Check, CheckCircle2, ChevronRight, Clock3, Delete,
   Download, Home, LoaderCircle, LogOut, Moon, MoreVertical, Pencil, Plus, Save,
-  Share2, ShieldCheck, Smartphone, SquarePlus, Sun, UserRound, X,
+  Share2, ShieldCheck, Smartphone, SquarePlus, Sun, Trash2, Undo2, UserRound, X,
 } from "lucide-react";
 
 type User = { displayName: string; email: string; fullName: string | null };
@@ -333,8 +333,8 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
     <section className="phone-shell app-shell">
       <div className="app-scroll">
         {message && <div className="toast-message">{message}</div>}
-        {tab === "today" && <TodayView data={data} setData={setData} todayCheckins={todayCheckins} post={post} />}
-        {tab === "history" && <HistoryView checkins={data.checkins} />}
+        {tab === "today" && <TodayView data={data} setData={setData} todayCheckins={todayCheckins} />}
+        {tab === "history" && <HistoryView checkins={data.checkins} setData={setData} />}
         {tab === "stats" && <StatsView checkins={data.checkins} />}
         {tab === "profile" && <ProfileView data={data} setData={setData} user={user} saving={saving} post={post} theme={theme} setTheme={setTheme} onOpenInstall={() => setShowInstallGuide(true)} onSignOut={onSignOut} />}
       </div>
@@ -471,18 +471,16 @@ function RegistrationFinish({ data, saving, post }: {
   </section></main>;
 }
 
-function TodayView({ data, setData, todayCheckins, post }: {
+function TodayView({ data, setData, todayCheckins }: {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData | null>>;
   todayCheckins: Checkin[];
-  post: (body: Record<string, unknown>, success?: string, refresh?: boolean) => Promise<void>;
 }) {
   const [savingTimes, setSavingTimes] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editMessage, setEditMessage] = useState("");
   const [draftReminders, setDraftReminders] = useState<Reminder[]>(data.reminders);
-  const [undoCheckin, setUndoCheckin] = useState<{ checkin: Checkin; timer: number; expiresAt: number } | null>(null);
-  const [undoSeconds, setUndoSeconds] = useState(0);
+  const [checkinMessage, setCheckinMessage] = useState("");
   const visibleReminders = isEditing ? draftReminders : data.reminders;
   const total = data.reminders.filter((item) => item.enabled).reduce((sum, item) => sum + item.times.length, 0);
   const progress = total ? Math.min(100, Math.round(todayCheckins.length / total * 100)) : 0;
@@ -549,33 +547,24 @@ function TodayView({ data, setData, todayCheckins, post }: {
       setSavingTimes(false);
     }
   };
-  useEffect(() => {
-    if (!undoCheckin) { setUndoSeconds(0); return; }
-    const update = () => setUndoSeconds(Math.max(0, Math.ceil((undoCheckin.expiresAt - Date.now()) / 1000)));
-    update();
-    const interval = window.setInterval(update, 200);
-    return () => window.clearInterval(interval);
-  }, [undoCheckin]);
-  const commitCheckin = (pending: { checkin: Checkin; timer: number; expiresAt: number }) => {
-    window.clearTimeout(pending.timer);
-    void post({ action: "checkin", type: pending.checkin.type }, undefined, false);
-  };
   const markNow = (item: Reminder) => {
-    if (undoCheckin) commitCheckin(undoCheckin);
     const checkin = { id: crypto.randomUUID(), type: item.type, completedAt: new Date().toISOString() };
     setData((current) => current ? { ...current, checkins: [checkin, ...current.checkins] } : current);
-    const timer = window.setTimeout(() => {
-      void post({ action: "checkin", type: item.type }, undefined, false);
-      setUndoCheckin((current) => current?.checkin.id === checkin.id ? null : current);
-    }, 10000);
-    setUndoCheckin({ checkin, timer, expiresAt: Date.now() + 10000 });
+    setCheckinMessage("");
+    void api({ action: "checkin", type: item.type, id: checkin.id }).catch(() => {
+      setData((current) => current ? { ...current, checkins: current.checkins.filter((value) => value.id !== checkin.id) } : current);
+      setCheckinMessage("Отметка не сохранилась. Попробуй ещё раз");
+    });
   };
-  const undoLastCheckin = () => {
-    if (!undoCheckin) return;
-    window.clearTimeout(undoCheckin.timer);
-    const id = undoCheckin.checkin.id;
-    setData((current) => current ? { ...current, checkins: current.checkins.filter((item) => item.id !== id) } : current);
-    setUndoCheckin(null);
+  const undoLastCheckin = (type: ReminderType) => {
+    const checkin = todayCheckins.find((item) => item.type === type);
+    if (!checkin) return;
+    setData((current) => current ? { ...current, checkins: current.checkins.filter((item) => item.id !== checkin.id) } : current);
+    setCheckinMessage("");
+    void api({ action: "deleteCheckin", id: checkin.id }).catch(() => {
+      setData((current) => current ? { ...current, checkins: [checkin, ...current.checkins].sort((a, b) => b.completedAt.localeCompare(a.completedAt)) } : current);
+      setCheckinMessage("Не получилось отменить отметку");
+    });
   };
   return <div className="screen">
     <header className="screen-header greeting">
@@ -590,6 +579,7 @@ function TodayView({ data, setData, todayCheckins, post }: {
       {!isEditing && <button type="button" className="edit-reminders" onClick={beginEditing}><Pencil /> <span>Редактировать</span></button>}
     </div>
     {editMessage && <p className={`edit-status ${editMessage.startsWith("Не получилось") ? "error" : ""}`}>{editMessage}</p>}
+    {checkinMessage && <p className="edit-status error">{checkinMessage}</p>}
     <div className="reminder-stack">
       {visibleReminders.map((item) => {
         const done = todayCheckins.filter((checkin) => checkin.type === item.type).length;
@@ -609,9 +599,10 @@ function TodayView({ data, setData, todayCheckins, post }: {
               {item.times.length < 10 && <button className="add-time" type="button" onClick={() => saveTimes(item, [...item.times, nextTime(item.times)])}><Plus /> Добавить время <small>{item.times.length}/10</small></button>}
               <button className="healthy-schedule" onClick={() => saveTimes(item, HEALTHY_TIMES[item.type])}>Предложить здоровый график</button>
             </> : <div className="time-row saved-times">{item.times.map((time) => <span key={`${item.id}-${time}`}>{time}</span>)}</div>}
-            {!isEditing && (undoCheckin?.checkin.type === item.type
-              ? <button className="check-button undo-check-button" onClick={undoLastCheckin}><X /> Отменить · {undoSeconds} сек</button>
-              : <button className="check-button" disabled={!item.enabled} onClick={() => markNow(item)}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>)}
+            {!isEditing && <div className="check-actions">
+              <button className="check-button" disabled={!item.enabled} onClick={() => markNow(item)}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>
+              {done > 0 && <button className="undo-check-button" type="button" aria-label={`Отменить последнюю отметку: ${item.title}`} onClick={() => undoLastCheckin(item.type)}><Undo2 /></button>}
+            </div>}
           </div>
         </article>;
       })}
@@ -623,7 +614,11 @@ function TodayView({ data, setData, todayCheckins, post }: {
   </div>;
 }
 
-function HistoryView({ checkins }: { checkins: Checkin[] }) {
+function HistoryView({ checkins, setData }: { checkins: Checkin[]; setData: React.Dispatch<React.SetStateAction<AppData | null>> }) {
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [historyMessage, setHistoryMessage] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
+  const todayIds = checkins.filter((item) => item.completedAt.startsWith(today)).map((item) => item.id);
   const groups = useMemo(() => {
     const map = new Map<string, Checkin[]>();
     checkins.forEach((item) => {
@@ -632,9 +627,29 @@ function HistoryView({ checkins }: { checkins: Checkin[] }) {
     });
     return [...map.entries()];
   }, [checkins]);
-  return <div className="screen"><header className="screen-header"><p>Твои маленькие победы</p><h1>История</h1></header>
+  const removeCheckins = async (ids: string[]) => {
+    if (!ids.length) return;
+    const removed = checkins.filter((item) => ids.includes(item.id));
+    setData((current) => current ? { ...current, checkins: current.checkins.filter((item) => !ids.includes(item.id)) } : current);
+    setHistoryMessage("");
+    setConfirmClear(false);
+    try {
+      await api({ action: "deleteCheckins", ids });
+    } catch {
+      setData((current) => current ? {
+        ...current,
+        checkins: [...current.checkins, ...removed.filter((item) => !current.checkins.some((value) => value.id === item.id))].sort((a, b) => b.completedAt.localeCompare(a.completedAt)),
+      } : current);
+      setHistoryMessage("Не получилось удалить отметки");
+    }
+  };
+  return <div className="screen"><header className="screen-header history-header"><div><p>Твои маленькие победы</p><h1>История</h1></div>
+    {!!todayIds.length && <button type="button" onClick={() => setConfirmClear(true)}>Очистить сегодня</button>}
+  </header>
+    {historyMessage && <p className="edit-status error">{historyMessage}</p>}
+    {confirmClear && <div className="clear-confirm"><p>Удалить все отметки за сегодня?</p><div><button type="button" onClick={() => setConfirmClear(false)}>Оставить</button><button type="button" onClick={() => void removeCheckins(todayIds)}>Удалить</button></div></div>}
     {!groups.length ? <EmptyState text="Здесь появятся отметки о воде, еде и отдыхе." /> : groups.map(([date, items]) => <section className="history-day" key={date}>
-      <h2>{date}</h2>{items.map((item) => { const meta = META[item.type]; return <div className="history-item" key={item.id}><CareIcon type={item.type} className="tiny-icon" /><div><strong>{meta.title}</strong><span>{new Date(item.completedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span></div><Check /></div>; })}
+      <h2>{date}</h2>{items.map((item) => { const meta = META[item.type]; return <div className="history-item" key={item.id}><CareIcon type={item.type} className="tiny-icon" /><div><strong>{meta.title}</strong><span>{new Date(item.completedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span></div><button type="button" className="history-delete" aria-label={`Удалить отметку: ${meta.title}`} onClick={() => void removeCheckins([item.id])}><Trash2 /></button></div>; })}
     </section>)}
   </div>;
 }
