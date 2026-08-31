@@ -1,4 +1,4 @@
-const CACHE = "self-care-v3";
+const CACHE = "self-care-v4";
 const asset = (name) => new URL(name, self.registration.scope).href;
 self.addEventListener("install", () => { self.skipWaiting(); });
 self.addEventListener("activate", (event) => {
