@@ -746,6 +746,8 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
   const [name, setName] = useState(data.profile.displayName);
   const [goal, setGoal] = useState(data.profile.goal);
   const [avatarId, setAvatarId] = useState<AvatarId>(avatarById(data.profile.avatarId).id);
+  const [isEditing, setIsEditing] = useState(false);
+  const goalLabel = goal === "water" ? "Пить больше воды" : goal === "food" ? "Регулярно кушать" : goal === "rest" ? "Больше отдыхать" : "Всё и сразу";
   const notificationStatus = typeof window !== "undefined" && "Notification" in window
     ? Notification.permission === "granted" ? "Разрешены" : "Нажми, чтобы включить"
     : "Сначала добавь приложение на экран";
@@ -759,21 +761,30 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
   };
   const chooseAvatar = (nextAvatar: AvatarId) => {
     setAvatarId(nextAvatar);
-    setData((current) => current ? { ...current, profile: { ...current.profile, avatarId: nextAvatar } } : current);
-    void post({ action: "profile", displayName: name, goal, avatarId: nextAvatar }, "Пингвин переоделся", false);
   };
   const saveProfile = () => {
     setData((current) => current ? { ...current, profile: { ...current.profile, displayName: name, goal, avatarId } } : current);
     void post({ action: "profile", displayName: name, goal, avatarId }, "Профиль сохранён", false);
+    setIsEditing(false);
   };
-  return <div className="screen"><header className="screen-header profile-head"><div className="profile-avatar"><PenguinAvatar avatarId={avatarId} /></div><div><p>{user.email}</p><h1>{name}</h1></div></header>
-    <section className="avatar-card"><div className="avatar-card-title"><strong>Твой пингвин</strong><span>Выбери цвет</span></div>
-      <div className="avatar-grid">{AVATARS.map((avatar) => <button type="button" key={avatar.id} className={avatarId === avatar.id ? "selected" : ""} aria-label={avatar.label} aria-pressed={avatarId === avatar.id} onClick={() => chooseAvatar(avatar.id)}><PenguinAvatar avatarId={avatar.id} alt="" />{avatarId === avatar.id && <Check />}</button>)}</div>
-    </section>
-    <section className="settings-card"><label>Как к тебе обращаться?<input value={name} onChange={(event) => setName(event.target.value)} maxLength={40} /></label>
-      <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="water">Пить больше воды</option><option value="food">Регулярно кушать</option><option value="rest">Больше отдыхать</option></select></label>
-      <button className="primary-button save-button" disabled={saving} onClick={saveProfile}><Save /> Сохранить</button>
-    </section>
+  const cancelEditing = () => {
+    setName(data.profile.displayName);
+    setGoal(data.profile.goal);
+    setAvatarId(avatarById(data.profile.avatarId).id);
+    setIsEditing(false);
+  };
+  return <div className="screen"><header className="screen-header profile-head"><div className="profile-avatar"><PenguinAvatar avatarId={avatarId} /></div><div className="profile-title"><p>{user.email}</p><h1>{name}</h1><span>{goalLabel}</span></div>
+    {!isEditing && <button type="button" className="profile-edit-button" aria-label="Редактировать профиль" onClick={() => setIsEditing(true)}><Pencil /></button>}
+  </header>
+    {isEditing && <>
+      <section className="avatar-card"><div className="avatar-card-title"><strong>Твой пингвин</strong><span>Выбери цвет</span></div>
+        <div className="avatar-grid">{AVATARS.map((avatar) => <button type="button" key={avatar.id} className={avatarId === avatar.id ? "selected" : ""} aria-label={avatar.label} aria-pressed={avatarId === avatar.id} onClick={() => chooseAvatar(avatar.id)}><PenguinAvatar avatarId={avatar.id} alt="" />{avatarId === avatar.id && <Check />}</button>)}</div>
+      </section>
+      <section className="settings-card"><label>Как к тебе обращаться?<input value={name} onChange={(event) => setName(event.target.value)} maxLength={40} /></label>
+        <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="water">Пить больше воды</option><option value="food">Регулярно кушать</option><option value="rest">Больше отдыхать</option></select></label>
+        <div className="profile-form-actions"><button type="button" className="secondary-button" disabled={saving} onClick={cancelEditing}>Отмена</button><button className="primary-button save-button" disabled={saving || !name.trim()} onClick={saveProfile}><Save /> Сохранить</button></div>
+      </section>
+    </>}
     <section className="settings-list">
       <div className="settings-row">{theme === "dark" ? <Moon /> : <Sun />}<span><strong>Тёмная тема</strong><small>{theme === "dark" ? "Включена" : "Выключена"}</small></span><ToggleSwitch checked={theme === "dark"} label="Переключить тему" onChange={(dark) => setTheme(dark ? "dark" : "light")} /></div>
       <button onClick={onOpenInstall}><Smartphone /><span><strong>Добавить на экран</strong><small>Инструкция для iPhone и Android</small></span><ChevronRight /></button>
