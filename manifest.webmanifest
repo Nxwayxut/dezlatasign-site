@@ -1,7 +1,7 @@
 {
   "name": "Не забывай",
   "short_name": "Не забывай",
-  "description": "Добрые напоминания о воде, еде и отдыхе",
+  "description": "Бережные напоминания о заботе, гигиене и здоровых привычках",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#fffaf5",
