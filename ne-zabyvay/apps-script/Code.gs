@@ -3,6 +3,7 @@ const SESSION_DAYS = 30;
 const OTP_MINUTES = 10;
 const OTP_RESEND_SECONDS = 45;
 const OTP_DAILY_LIMIT = 10;
+const DB_SCHEMA_VERSION = "2026-08-reminders-v2";
 
 // Apps Script keeps these values only for the duration of one server request.
 // Reusing the spreadsheet and its sheets avoids opening the same database
@@ -380,25 +381,94 @@ function getDatabase_() {
   } else {
     db = SpreadsheetApp.openById(id);
   }
+  const needsMigration = props.getProperty("DB_SCHEMA_VERSION") !== DB_SCHEMA_VERSION;
   Object.keys(TABLES).forEach(function (name) {
     let sheet = db.getSheetByName(name);
     if (!sheet) sheet = db.insertSheet(name);
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(TABLES[name]);
-    } else {
-      const currentHeaders = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0].map(String);
-      TABLES[name].forEach(function (header) {
-        if (currentHeaders.indexOf(header) === -1) {
-          sheet.getRange(1, currentHeaders.length + 1).setValue(header);
-          currentHeaders.push(header);
-        }
-      });
-    }
+    ensureSheetSchema_(sheet, name, needsMigration);
   });
+  props.setProperty("DB_SCHEMA_VERSION", DB_SCHEMA_VERSION);
   const first = db.getSheetByName("Sheet1") || db.getSheetByName("Лист1");
   if (first && Object.keys(TABLES).indexOf(first.getName()) === -1 && db.getSheets().length > Object.keys(TABLES).length) db.deleteSheet(first);
   DB_CACHE_ = db;
   return DB_CACHE_;
+}
+
+// Keeps every sheet in the exact order described in TABLES. Earlier versions
+// appended new reminder columns to the right of the old table, while the app
+// wrote rows in the new order. That made "weight" appear as a title, an ISO
+// date appear as a description and an enabled reminder disappear from its
+// category. This migration repairs those rows without resetting user choices.
+function ensureSheetSchema_(sheet, name, forceNormalize) {
+  const desiredHeaders = TABLES[name];
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, desiredHeaders.length).setValues([desiredHeaders]);
+    return;
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastColumn = Math.max(1, sheet.getLastColumn());
+  const currentHeaders = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function (value) { return String(value).trim(); });
+  const sameOrder = currentHeaders.length === desiredHeaders.length && desiredHeaders.every(function (header, index) {
+    return currentHeaders[index] === header;
+  });
+  if (sameOrder && !forceNormalize) return;
+
+  const values = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, lastColumn).getValues() : [];
+  const objects = values.filter(function (row) {
+    return row.some(function (cell) { return cell !== ""; });
+  }).map(function (row) {
+    const object = {};
+    currentHeaders.forEach(function (header, index) {
+      if (header) object[header] = row[index];
+    });
+    return name === "Reminders" ? repairReminderRow_(object) : object;
+  });
+
+  const normalizedRows = objects.map(function (object) {
+    return desiredHeaders.map(function (header) { return object[header] === undefined ? "" : object[header]; });
+  });
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, desiredHeaders.length).setValues([desiredHeaders]);
+  if (normalizedRows.length) sheet.getRange(2, 1, normalizedRows.length, desiredHeaders.length).setValues(normalizedRows);
+}
+
+function repairReminderRow_(row) {
+  const template = reminderTemplate_(row.type);
+  const categories = ["basic", "hygiene", "weight"];
+  const corruptNewRow = categories.indexOf(String(row.title || "")) >= 0 &&
+    template.title && String(row.timesJson || "") === template.title &&
+    isJsonArray_(row.createdAt) && isJsonArray_(row.updatedAt);
+
+  if (corruptNewRow) {
+    row = {
+      id: row.id,
+      ownerEmail: row.ownerEmail,
+      type: row.type,
+      category: row.title,
+      title: row.timesJson,
+      description: row.enabled,
+      timesJson: row.createdAt,
+      daysJson: row.updatedAt,
+      enabled: asBool_(row.category),
+      createdAt: row.description,
+      updatedAt: row.daysJson,
+    };
+  }
+
+  if (template.type) {
+    row.category = template.category;
+    row.title = template.title;
+    row.description = template.description;
+    if (!isJsonArray_(row.timesJson)) row.timesJson = JSON.stringify(template.times);
+    if (!isJsonArray_(row.daysJson)) row.daysJson = JSON.stringify(template.days);
+    row.enabled = asBool_(row.enabled);
+  }
+  return row;
+}
+
+function isJsonArray_(value) {
+  try { return Array.isArray(JSON.parse(String(value))); } catch (error) { return false; }
 }
 
 function sheet_(name) {
