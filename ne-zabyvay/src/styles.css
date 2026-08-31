@@ -321,7 +321,12 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .profile-head { display: flex; align-items: center; gap: 16px; }
 .profile-head h1 { font-size: 34px; }
 .profile-avatar { width: 72px; min-width: 72px; height: 72px; border-radius: 50%; background: var(--avatar-surface); display: grid; place-items: center; overflow: hidden; border: 1px solid var(--avatar-border); }
-.profile-avatar .penguin-avatar-canvas { width: 82px; height: 82px; }
+.profile-avatar .penguin-avatar-canvas { width: 64px; height: 64px; }
+.profile-title { flex: 1; min-width: 0; }
+.profile-title p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-title span { display: block; margin-top: 5px; color: var(--muted); font-size: 14px; }
+.profile-edit-button { width: 44px; min-width: 44px; height: 44px; padding: 0; border: 1px solid var(--sand-2); border-radius: 50%; background: var(--sand); color: var(--orange); display: grid; place-items: center; cursor: pointer; }
+.profile-edit-button svg { width: 19px; height: 19px; }
 .avatar-card { margin-bottom: 16px; padding: 18px; border-radius: 28px; background: var(--sand); }
 .avatar-card-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .avatar-card-title strong { font-size: 18px; }
@@ -337,6 +342,9 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .settings-card input:focus, .settings-card select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px #f5660015; }
 .save-button { min-height: 50px; font-size: 17px; }
 .save-button svg { width: 19px; }
+.profile-form-actions { display: grid; grid-template-columns: .72fr 1.28fr; gap: 10px; }
+.profile-form-actions .secondary-button { min-height: 50px; border: 1px solid var(--sand-2); border-radius: 999px; background: var(--cream); color: var(--muted); cursor: pointer; }
+.profile-form-actions .secondary-button:disabled { opacity: .55; }
 .settings-list { margin-top: 16px; background: var(--sand); border-radius: 28px; overflow: hidden; }
 .settings-list > button, .settings-list > a, .settings-list > .settings-row { width: 100%; border: 0; background: transparent; min-height: 74px; padding: 13px 18px; display: flex; align-items: center; gap: 14px; text-align: left; text-decoration: none; cursor: pointer; border-bottom: 1px solid var(--divider); }
 .settings-list .settings-row { cursor: default; }
