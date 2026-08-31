@@ -32,6 +32,8 @@
   --legal-text: #51453e;
   --progress-bg: #241a14;
   --progress-ink: #fffaf5;
+  --avatar-surface: #fff7ef;
+  --avatar-border: #e8d7c8;
 }
 
 html[data-theme="dark"] {
@@ -60,6 +62,8 @@ html[data-theme="dark"] {
   --legal-text: #d9ccc1;
   --progress-bg: #100d0b;
   --progress-ink: #fff7ef;
+  --avatar-surface: #fff7ef;
+  --avatar-border: #806657;
 }
 
 * { box-sizing: border-box; }
@@ -214,8 +218,9 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .screen-header h1 { margin: 0; font-size: 42px; font-weight: 700; letter-spacing: -1.8px; line-height: 1; }
 .greeting { display: flex; align-items: center; justify-content: space-between; min-height: 76px; }
 .greeting h1 { font-size: 32px; }
-.mini-penguin { width: 80px; height: 80px; border-radius: 50%; background: var(--sand); overflow: hidden; position: relative; }
-.mini-penguin img { position: absolute; width: 90px; height: auto; max-width: none; left: -5px; top: -3px; forced-color-adjust: none; }
+.penguin-avatar-canvas { display: block; width: 100%; height: 100%; forced-color-adjust: none; }
+.mini-penguin { width: 80px; height: 80px; border-radius: 50%; background: var(--avatar-surface); overflow: hidden; position: relative; border: 1px solid var(--avatar-border); }
+.mini-penguin .penguin-avatar-canvas { position: absolute; width: 90px; height: 90px; max-width: none; left: -5px; top: -5px; }
 .progress-card { background: var(--progress-bg); color: var(--progress-ink); border-radius: 28px; padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 12px 28px #261b1421; }
 .progress-card strong { display: block; font-size: 30px; }
 .progress-card span { display: block; font-size: 14px; opacity: .72; }
@@ -315,8 +320,17 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 
 .profile-head { display: flex; align-items: center; gap: 16px; }
 .profile-head h1 { font-size: 34px; }
-.profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--orange); color: white; display: grid; place-items: center; }
-.profile-avatar svg { width: 38px; height: 38px; }
+.profile-avatar { width: 72px; min-width: 72px; height: 72px; border-radius: 50%; background: var(--avatar-surface); display: grid; place-items: center; overflow: hidden; border: 1px solid var(--avatar-border); }
+.profile-avatar .penguin-avatar-canvas { width: 82px; height: 82px; }
+.avatar-card { margin-bottom: 16px; padding: 18px; border-radius: 28px; background: var(--sand); }
+.avatar-card-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.avatar-card-title strong { font-size: 18px; }
+.avatar-card-title span { color: var(--muted); font-size: 13px; }
+.avatar-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+.avatar-grid button { position: relative; min-width: 0; aspect-ratio: 1; padding: 1px; overflow: hidden; border: 2px solid transparent; border-radius: 50%; background: var(--avatar-surface); cursor: pointer; transition: border-color .16s ease, transform .16s ease; }
+.avatar-grid button:active { transform: scale(.94); }
+.avatar-grid button.selected { border-color: var(--orange); box-shadow: 0 0 0 3px #f566001c; }
+.avatar-grid button > svg { position: absolute; right: -1px; bottom: -1px; width: 19px; height: 19px; padding: 3px; border-radius: 50%; background: var(--orange); color: white; stroke-width: 3; }
 .settings-card { background: var(--sand); border-radius: 28px; padding: 20px; }
 .settings-card label { display: block; font-weight: 700; font-size: 15px; margin-bottom: 18px; }
 .settings-card input, .settings-card select { width: 100%; min-height: 52px; margin-top: 8px; border: 1px solid var(--sand-2); border-radius: 16px; background: var(--cream); padding: 0 15px; outline: none; }
