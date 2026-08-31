@@ -5,7 +5,7 @@ const OTP_RESEND_SECONDS = 45;
 const OTP_DAILY_LIMIT = 10;
 
 const TABLES = {
-  Profiles: ["email", "displayName", "goal", "notificationsEnabled", "onboardingCompleted", "createdAt", "updatedAt"],
+  Profiles: ["email", "displayName", "goal", "notificationsEnabled", "onboardingCompleted", "createdAt", "updatedAt", "avatarId"],
   Reminders: ["id", "ownerEmail", "type", "title", "timesJson", "enabled", "createdAt", "updatedAt"],
   Checkins: ["id", "ownerEmail", "type", "completedAt"],
   Sessions: ["tokenHash", "email", "expiresAt", "createdAt"],
@@ -200,8 +200,11 @@ function deleteCheckins_(email, body) {
 function updateProfile_(email, body) {
   const displayName = String(body.displayName || "").trim().slice(0, 40);
   const goal = ["water", "food", "rest", "all"].indexOf(String(body.goal || "all")) >= 0 ? String(body.goal || "all") : "all";
+  const current = findBy_("Profiles", "email", email);
+  const requestedAvatar = String(body.avatarId || (current && current.avatarId) || "classic");
+  const avatarId = ["classic", "orange", "coral", "berry", "plum", "blue", "teal", "sage", "mustard", "cocoa"].indexOf(requestedAvatar) >= 0 ? requestedAvatar : "classic";
   if (!displayName) throw new Error("Введи имя");
-  const update = { displayName: displayName, goal: goal, updatedAt: new Date().toISOString() };
+  const update = { displayName: displayName, goal: goal, avatarId: avatarId, updatedAt: new Date().toISOString() };
   if (body.onboardingCompleted === true) update.onboardingCompleted = true;
   if (body.notificationsEnabled === true) update.notificationsEnabled = true;
   updateBy_("Profiles", "email", email, update);
@@ -219,6 +222,7 @@ function ensureUser_(email) {
       onboardingCompleted: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      avatarId: "classic",
     };
     append_("Profiles", profile);
   }
@@ -256,6 +260,7 @@ function normalizeProfile_(profile) {
     goal: profile.goal || "all",
     notificationsEnabled: asBool_(profile.notificationsEnabled),
     onboardingCompleted: asBool_(profile.onboardingCompleted),
+    avatarId: profile.avatarId || "classic",
   };
 }
 
@@ -276,7 +281,17 @@ function getDatabase_() {
   Object.keys(TABLES).forEach(function (name) {
     let sheet = db.getSheetByName(name);
     if (!sheet) sheet = db.insertSheet(name);
-    if (sheet.getLastRow() === 0) sheet.appendRow(TABLES[name]);
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(TABLES[name]);
+    } else {
+      const currentHeaders = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0].map(String);
+      TABLES[name].forEach(function (header) {
+        if (currentHeaders.indexOf(header) === -1) {
+          sheet.getRange(1, currentHeaders.length + 1).setValue(header);
+          currentHeaders.push(header);
+        }
+      });
+    }
   });
   const first = db.getSheetByName("Sheet1") || db.getSheetByName("Лист1");
   if (first && Object.keys(TABLES).indexOf(first.getName()) === -1 && db.getSheets().length > Object.keys(TABLES).length) db.deleteSheet(first);
