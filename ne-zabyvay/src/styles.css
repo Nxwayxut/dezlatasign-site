@@ -102,11 +102,12 @@ h1, h2, h3, strong { font-weight: 700; }
 .design-care-icon.heart img { width: 958.5%; left: -129.3%; top: -1168.3%; }
 .design-care-icon.tiny-icon { width: 42px; height: 42px; min-width: 42px; margin: 0; }
 .habit-care-icon { width: 62px; height: 62px; min-width: 62px; border-radius: 50%; background: var(--cream); color: var(--orange); display: grid; place-items: center; box-shadow: 0 9px 14px #4d362616; }
-.habit-care-icon svg { width: 29px; height: 29px; stroke-width: 2; }
+.habit-care-icon svg { width: 31px; height: 31px; fill: currentColor; stroke: none; }
+.habit-care-icon svg .glyph-cut { fill: var(--cream); }
 .habit-care-icon.tiny-icon { width: 42px; height: 42px; min-width: 42px; }
 .habit-care-icon.tiny-icon svg { width: 21px; height: 21px; }
-.habit-care-icon.walk, .habit-care-icon.weigh-in { color: #78a25d; }
-.habit-care-icon.food-diary { color: var(--coral); }
+.habit-care-icon.walk { color: #78a25d; }
+.habit-care-icon.exercise { color: var(--coral); }
 .design-penguin { width: 100%; position: relative; overflow: hidden; flex-shrink: 0; forced-color-adjust: none; }
 .design-penguin img { position: absolute; height: auto; max-width: none; forced-color-adjust: none; }
 .design-penguin .penguin-transparent { display: none; }
@@ -148,6 +149,12 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .email-field input, .about-name input { width: 100%; min-height: 62px; border: 3px solid var(--sand-2); border-radius: 23px; background: transparent; padding: 0 20px; font-size: 21px; outline: none; }
 .email-field input:focus, .about-name input:focus { border-color: var(--muted); box-shadow: 0 0 0 4px #f5660010; }
 .email-field + .primary-button { margin-top: 18px; }
+.password-field, .password-repeat { margin-top: 12px; }
+.auth-divider { height: 34px; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+.auth-divider::before, .auth-divider::after { content: ""; height: 1px; flex: 1; background: var(--sand-2); }
+.auth-code-button { width: 100%; }
+.password-screen { padding-top: 44px; }
+.password-hint { margin: 18px 12px 0; color: var(--muted); font-size: 13px; line-height: 1.4; text-align: center; }
 .confirm-screen { margin: 0; width: 100%; min-height: calc(100svh - 62px); }
 .confirm-screen .auth-screen-copy { margin: 48px 14px 0; }
 .confirm-screen .auth-screen-copy p strong { font-weight: 700; }
@@ -259,6 +266,10 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .schedule-summary > svg.rotated { transform: rotate(90deg); }
 .schedule-editor { margin-top: 10px; padding: 13px; border-radius: 18px; background: var(--cream); }
 .schedule-editor > strong { display: block; margin: 3px 0 8px; font-size: 13px; }
+.exercise-name { display: block; margin: 4px 0 14px; color: var(--ink); font-size: 13px; font-weight: 700; }
+.exercise-name input { width: 100%; min-height: 46px; margin-top: 7px; padding: 0 13px; border: 1px solid var(--sand-2); border-radius: 14px; background: var(--cream); color: var(--ink); outline: none; }
+.exercise-name input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px #f5660015; }
+.exercise-name small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; font-weight: 400; }
 .schedule-editor .time-row { margin: 0 0 10px; }
 .add-time.wide { width: 100%; margin: 0 0 15px; }
 .weekday-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -354,6 +365,7 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .reminder-state.on { background: #f5660015; color: var(--orange); }
 .toggle-switch { width: 48px; height: 27px; min-width: 48px; min-height: 27px; padding: 2px; border: 0; border-radius: 999px; background: var(--sand-2); cursor: pointer; transition: background .18s; }
 .toggle-switch.checked { background: var(--orange); }
+.toggle-switch:disabled { cursor: wait; opacity: .62; }
 .toggle-switch span { display: block; width: 23px; height: 23px; border-radius: 50%; background: var(--cream); transition: transform .18s; }
 .toggle-switch.checked span { transform: translateX(21px); }
 .time-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0; }
@@ -465,6 +477,7 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .profile-form-actions .secondary-button:disabled { opacity: .55; }
 .settings-list { margin-top: 16px; background: var(--sand); border-radius: 28px; overflow: hidden; }
 .settings-list > button, .settings-list > a, .settings-list > .settings-row { width: 100%; border: 0; background: transparent; min-height: 74px; padding: 13px 18px; display: flex; align-items: center; gap: 14px; text-align: left; text-decoration: none; cursor: pointer; border-bottom: 1px solid var(--divider); }
+.notification-note { margin: -1px 0 0; padding: 10px 18px 13px; border-bottom: 1px solid var(--divider); color: var(--orange); font-size: 12px; line-height: 1.35; }
 .settings-list .settings-row { cursor: default; }
 .settings-list > :last-child { border-bottom: 0; }
 .settings-list > * > svg:first-child { color: var(--orange); width: 24px; min-width: 24px; }

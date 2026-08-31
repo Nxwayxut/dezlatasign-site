@@ -8,10 +8,10 @@ import {
   Trash2, Undo2, UserRound, Utensils, X,
 } from "lucide-react";
 
-type User = { displayName: string; email: string; fullName: string | null };
+type User = { displayName: string; email: string; fullName: string | null; hasPassword: boolean };
 type BasicReminderType = "water" | "food" | "rest";
 type HygieneReminderType = "teeth" | "shower" | "hands" | "face" | "floss" | "clothes" | "towel" | "linen" | "nails";
-type WeightReminderType = "walk" | "sleep" | "stress-pause" | "food-diary" | "weigh-in";
+type WeightReminderType = "walk" | "sleep" | "exercise";
 type ReminderType = BasicReminderType | HygieneReminderType | WeightReminderType;
 type ReminderCategory = "basic" | "hygiene" | "weight";
 type Reminder = { id: string; type: ReminderType; category: ReminderCategory; title: string; description: string; times: string[]; days: number[]; enabled: boolean };
@@ -76,12 +76,14 @@ const REMINDER_COPY: Record<ReminderType, { title: string; text: string; categor
   towel: { title: "Сменить полотенце", text: "Еженедельное напоминание", category: "hygiene" },
   linen: { title: "Сменить постельное бельё", text: "Выбери удобный день недели", category: "hygiene" },
   nails: { title: "Уход за ногтями", text: "Без строгого расписания", category: "hygiene" },
-  walk: { title: "Немного пройтись", text: "Движение без наказаний за еду", category: "weight" },
-  sleep: { title: "Подготовиться ко сну", text: "Сон тоже влияет на самочувствие", category: "weight" },
-  "stress-pause": { title: "Сделать паузу", text: "Проверить усталость и стресс без оценки", category: "weight" },
-  "food-diary": { title: "Заполнить дневник питания", text: "Записать день без оценок и стыда", category: "weight" },
-  "weigh-in": { title: "Отметить вес", text: "Смотреть на тенденцию, а не на один день", category: "weight" },
+  walk: { title: "Немного пройтись", text: "Помогу не забыть немного прогуляться", category: "weight" },
+  sleep: { title: "Подготовиться ко сну", text: "Напомню спокойно завершить день", category: "weight" },
+  exercise: { title: "Сделать упражнение", text: "Выбери упражнение, которое подходит тебе", category: "weight" },
 };
+
+const ACTIVE_REMINDER_TYPES = new Set<ReminderType>([
+  "water", "food", "rest", "teeth", "shower", "hands", "face", "floss", "clothes", "towel", "linen", "nails", "walk", "sleep", "exercise",
+]);
 
 const WEEKDAYS = [
   { id: 1, short: "Пн" }, { id: 2, short: "Вт" }, { id: 3, short: "Ср" },
@@ -89,7 +91,17 @@ const WEEKDAYS = [
 ];
 
 const isBasicType = (type: ReminderType): type is BasicReminderType => type === "water" || type === "food" || type === "rest";
-const reminderInfo = (reminder: Reminder) => REMINDER_COPY[reminder.type] || { title: reminder.title, text: reminder.description, category: reminder.category };
+const reminderInfo = (reminder: Reminder) => {
+  if (reminder.type === "exercise") {
+    const exercise = reminder.description.trim();
+    return {
+      title: exercise ? `Упражнение: ${exercise}` : REMINDER_COPY.exercise.title,
+      text: exercise ? `Напоминаю выполнить упражнение: ${exercise}` : REMINDER_COPY.exercise.text,
+      category: "weight" as const,
+    };
+  }
+  return REMINDER_COPY[reminder.type] || { title: reminder.title, text: reminder.description, category: reminder.category };
+};
 
 const API_URL = import.meta.env.VITE_API_URL || "https://script.google.com/macros/s/AKfycbxy_PDrNcLIGU05xQJMLB-XEXbtL6vY4NVj8ANHV79sLlwb98TKjOVsSU5U_NYcY1Y/exec";
 const TOKEN_KEY = "ne-zabyvay-session";
@@ -131,24 +143,25 @@ async function backend(body: Record<string, unknown>, timeoutMs = 20000) {
   }
 }
 
+function HabitGlyph({ type }: { type: Exclude<ReminderType, BasicReminderType> }) {
+  if (type === "teeth" || type === "floss") return <svg viewBox="0 0 64 64"><path d="M18 9c7-3 11 2 14 2s7-5 14-2c8 4 7 15 4 23-3 9-5 23-11 23-5 0-3-14-7-14s-2 14-7 14c-6 0-8-14-11-23-3-8-4-19 4-23Z" /></svg>;
+  if (type === "shower") return <svg viewBox="0 0 64 64"><path d="M13 29h31c0-9-7-16-16-16S13 20 13 29Zm9 6c3 0 3 5 0 9-3-4-3-9 0-9Zm11 0c3 0 3 5 0 9-3-4-3-9 0-9Zm11 0c3 0 3 5 0 9-3-4-3-9 0-9ZM25 8h7v8h-7z" /></svg>;
+  if (type === "hands") return <svg viewBox="0 0 64 64"><path d="M17 31V13a4 4 0 0 1 8 0v11h1V9a4 4 0 0 1 8 0v15h1V12a4 4 0 0 1 8 0v14h1v-8a4 4 0 0 1 8 0v17c0 13-8 21-20 21-11 0-20-7-23-18-2-7 6-10 10-4l5 6V31h-7Z" /></svg>;
+  if (type === "face" || type === "nails") return <svg viewBox="0 0 64 64"><path d="m32 5 5 16 16 5-16 5-5 16-5-16-16-5 16-5 5-16Zm19 32 2 7 7 2-7 2-2 7-2-7-7-2 7-2 2-7Z" /></svg>;
+  if (type === "clothes") return <svg viewBox="0 0 64 64"><path d="m22 8 10 6 10-6 14 9-8 13-6-4v30H22V26l-6 4-8-13 14-9Z" /></svg>;
+  if (type === "towel") return <svg viewBox="0 0 64 64"><rect x="13" y="10" width="38" height="44" rx="7" /><path className="glyph-cut" d="M19 22h26v4H19zm0 19h26v4H19z" /></svg>;
+  if (type === "linen") return <svg viewBox="0 0 64 64"><path d="M9 18h8v17h38v18h-7v-6H16v6H9V18Zm12 4h16a8 8 0 0 1 8 8v2H21V22Z" /></svg>;
+  if (type === "walk") return <svg viewBox="0 0 64 64"><ellipse cx="22" cy="36" rx="9" ry="15" transform="rotate(-18 22 36)" /><circle cx="12" cy="17" r="4" /><circle cx="20" cy="13" r="4" /><circle cx="29" cy="15" r="4" /><ellipse cx="44" cy="40" rx="9" ry="15" transform="rotate(18 44 40)" /><circle cx="35" cy="20" r="4" /><circle cx="44" cy="17" r="4" /><circle cx="53" cy="21" r="4" /></svg>;
+  if (type === "sleep") return <svg viewBox="0 0 64 64"><path d="M49 42A23 23 0 0 1 23 12a23 23 0 1 0 26 30Z" /></svg>;
+  return <svg viewBox="0 0 64 64"><path d="M8 24h8v-7h8v30h-8v-7H8V24Zm48 0v16h-8v7h-8V17h8v7h8ZM24 27h16v10H24V27Z" /></svg>;
+}
+
 function CareIcon({ type, className = "" }: { type: ReminderType | "heart"; className?: string }) {
   if (type === "heart" || isBasicType(type)) {
     const source = type === "heart" ? asset("design-about.png") : asset("design-main.png");
     return <span className={`design-care-icon ${type} ${className}`} aria-hidden="true"><img src={source} alt="" /></span>;
   }
-  const Icon = type === "teeth" || type === "floss" ? Smile
-    : type === "shower" ? ShowerHead
-      : type === "hands" ? Hand
-        : type === "face" ? Sparkles
-          : type === "clothes" ? Shirt
-            : type === "towel" || type === "linen" ? BedDouble
-              : type === "nails" ? Sparkles
-                : type === "walk" ? Footprints
-                  : type === "sleep" ? Moon
-                    : type === "stress-pause" ? HeartPulse
-                  : type === "food-diary" ? NotebookPen
-                    : Scale;
-  return <span className={`habit-care-icon ${type} ${className}`} aria-hidden="true"><Icon /></span>;
+  return <span className={`habit-care-icon ${type} ${className}`} aria-hidden="true"><HabitGlyph type={type} /></span>;
 }
 
 function DesignPenguin({ variant }: { variant: "main" | "account" | "email" }) {
@@ -215,11 +228,11 @@ async function api(body?: Record<string, unknown>) {
 function normalizeData(payload: AppData): AppData {
   return {
     ...payload,
-    reminders: (payload.reminders || []).map((item) => ({
+    reminders: (payload.reminders || []).filter((item) => ACTIVE_REMINDER_TYPES.has(item.type)).map((item) => ({
       ...item,
       category: REMINDER_COPY[item.type]?.category || (["basic", "hygiene", "weight"].includes(item.category) ? item.category : "basic"),
       title: REMINDER_COPY[item.type]?.title || item.title,
-      description: REMINDER_COPY[item.type]?.text || item.description || "",
+      description: item.type === "exercise" ? (item.description || "") : (REMINDER_COPY[item.type]?.text || item.description || ""),
       times: Array.isArray(item.times) && item.times.every((time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time)) ? item.times : ["09:00"],
       days: item.days?.length ? item.days : [0, 1, 2, 3, 4, 5, 6],
     })),
@@ -273,10 +286,13 @@ export function SelfCareApp() {
 }
 
 function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
-  const [step, setStep] = useState<"welcome" | "account" | "email" | "confirm">("welcome");
+  const [step, setStep] = useState<"welcome" | "account" | "email" | "confirm" | "password">("welcome");
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordRepeat, setPasswordRepeat] = useState("");
+  const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -297,6 +313,19 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
     } finally { setBusy(false); }
   };
 
+  const signInWithPassword = async () => {
+    if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || busy) return;
+    setBusy(true); setMessage("");
+    try {
+      const payload = await backend({ action: "loginPassword", email, password });
+      if (!payload.user || !payload.token) throw new ApiError("Не получилось войти");
+      localStorage.setItem(TOKEN_KEY, String(payload.token));
+      onSignedIn(payload.user as User);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не получилось войти");
+    } finally { setBusy(false); }
+  };
+
   const verifyCode = async (code = otp) => {
     if (code.length !== 4 || busy) return;
     setBusy(true); setMessage("");
@@ -304,10 +333,31 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
       const payload = await backend({ action: "verifyOtp", email, code, mode: authMode });
       if (!payload.user || !payload.token) throw new ApiError("Не получилось проверить код");
       localStorage.setItem(TOKEN_KEY, String(payload.token));
-      onSignedIn(payload.user as User);
+      const verifiedUser = payload.user as User;
+      if (authMode === "signup" || !verifiedUser.hasPassword) {
+        setPendingUser(verifiedUser);
+        setPassword("");
+        setPasswordRepeat("");
+        setStep("password");
+      } else {
+        onSignedIn(verifiedUser);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Код не подошёл. Проверь цифры");
       setOtp("");
+    } finally { setBusy(false); }
+  };
+
+  const savePassword = async () => {
+    if (password.length < 8) { setMessage("Пароль должен быть не короче 8 символов"); return; }
+    if (password !== passwordRepeat) { setMessage("Пароли не совпадают"); return; }
+    if (!pendingUser || busy) return;
+    setBusy(true); setMessage("");
+    try {
+      await backend({ action: "setPassword", token: localStorage.getItem(TOKEN_KEY), password });
+      onSignedIn({ ...pendingUser, hasPassword: true });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не получилось сохранить пароль");
     } finally { setBusy(false); }
   };
 
@@ -363,14 +413,24 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
               <p>На неё я отправлю код для подтверждения</p>
             </> : <>
               <h1>Войди в <span>аккаунт</span></h1>
-              <p>Введи почту — я отправлю код для входа</p>
+              <p>Используй пароль или код из письма</p>
             </>}
           </header>
           <label className="email-field">
             <span className="sr-only">Электронная почта</span>
             <input type="email" inputMode="email" enterKeyHint="next" autoComplete="email" autoCapitalize="none" spellCheck={false} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@mail.ru" />
           </label>
-          <button className="primary-button" disabled={!/^\S+@\S+\.\S+$/.test(email) || busy} onClick={sendCode}>{busy ? "Отправляю…" : "Продолжить"}</button>
+          {authMode === "login" && <label className="email-field password-field">
+            <span className="sr-only">Пароль</span>
+            <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Пароль" onKeyDown={(event) => { if (event.key === "Enter") void signInWithPassword(); }} />
+          </label>}
+          {authMode === "signup"
+            ? <button className="primary-button" disabled={!/^\S+@\S+\.\S+$/.test(email) || busy} onClick={sendCode}>{busy ? "Отправляю…" : "Продолжить"}</button>
+            : <>
+              <button className="primary-button" disabled={!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || busy} onClick={signInWithPassword}>{busy ? "Вхожу…" : "Войти по паролю"}</button>
+              <div className="auth-divider"><span>или</span></div>
+              <button className="secondary-button auth-code-button" disabled={!/^\S+@\S+\.\S+$/.test(email) || busy} onClick={sendCode}>Получить код на почту</button>
+            </>}
           {message && <p className="auth-note">{message}</p>}
           <DesignPenguin variant="email" />
         </div>}
@@ -392,6 +452,18 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
             <button className="delete-key" onClick={() => pressKey("delete")} aria-label="Удалить цифру"><Delete /></button>
           </div>
           {busy && <div className="code-busy"><LoaderCircle className="spin" /> Проверяю код…</div>}
+        </div>}
+
+        {step === "password" && <div className="auth-screen password-screen">
+          <header className="auth-screen-copy">
+            <h1>Придумай <span>пароль</span></h1>
+            <p>Не меньше 8 символов. Он понадобится для быстрого входа.</p>
+          </header>
+          <label className="email-field"><span className="sr-only">Новый пароль</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Новый пароль" /></label>
+          <label className="email-field password-repeat"><span className="sr-only">Повтори пароль</span><input type="password" autoComplete="new-password" value={passwordRepeat} onChange={(event) => setPasswordRepeat(event.target.value)} placeholder="Повтори пароль" onKeyDown={(event) => { if (event.key === "Enter") void savePassword(); }} /></label>
+          <button className="primary-button" disabled={password.length < 8 || passwordRepeat.length < 8 || busy} onClick={savePassword}>{busy ? "Сохраняю…" : "Сохранить пароль"}</button>
+          {message && <p className="auth-note">{message}</p>}
+          <p className="password-hint">Если забудешь пароль, всегда можно войти по коду из письма.</p>
         </div>}
       </section>
     </main>
@@ -434,16 +506,22 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
       const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
       data.reminders.filter((item) => item.enabled && item.days.includes(now.getDay()) && item.times.includes(time)).forEach((item) => {
         const key = `${item.id}-${now.toDateString()}-${time}`;
-        if (localStorage.getItem("last-care-notification") === key) return;
-        navigator.serviceWorker.ready.then((registration) => registration.active?.postMessage({
-          type: "SHOW_REMINDER", title: reminderInfo(item).title, body: reminderInfo(item).text, tag: key,
-        }));
-        localStorage.setItem("last-care-notification", key);
+        const storageKey = `care-notification-${key}`;
+        if (localStorage.getItem(storageKey) === "sent") return;
+        navigator.serviceWorker.ready.then((registration) => registration.showNotification(reminderInfo(item).title, {
+          body: reminderInfo(item).text,
+          tag: key,
+          icon: asset("favicon.svg"),
+          badge: asset("favicon.svg"),
+        })).catch(() => undefined);
+        localStorage.setItem(storageKey, "sent");
       });
     };
     check();
-    const timer = window.setInterval(check, 30000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(check, 15000);
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
   }, [data]);
 
   const post = async (body: Record<string, unknown>, success?: string, refresh = true) => {
@@ -628,7 +706,7 @@ function CareSectionsView({ data, setData }: { data: AppData; setData: React.Dis
   const sections: Array<{ id: ReminderCategory; title: string; text: string; Icon: typeof HeartPulse }> = [
     { id: "basic", title: "Базовая забота", text: "Вода, еда и отдых", Icon: HeartPulse },
     { id: "hygiene", title: "Гигиена", text: "Ежедневные и еженедельные дела", Icon: Sparkles },
-    { id: "weight", title: "Снижение веса", text: "Бережный прогресс без чувства вины", Icon: Scale },
+    { id: "weight", title: "Снижение веса", text: "Прогулка, сон и упражнения", Icon: Scale },
   ];
 
   if (section) {
@@ -639,7 +717,6 @@ function CareSectionsView({ data, setData }: { data: AppData; setData: React.Dis
         <div><p>Настрой только нужное</p><h1>{selected.title}</h1></div>
       </header>
       {message && <p className={`edit-status ${message.startsWith("Не получилось") ? "error" : ""}`}>{message}</p>}
-      {section === "weight" && <WeightSection data={data} setData={setData} setMessage={setMessage} />}
       <ReminderCatalog category={section} data={data} setData={setData} setMessage={setMessage} />
     </div>;
   }
@@ -667,17 +744,33 @@ function ReminderCatalog({ category, data, setData, setMessage }: {
   setMessage: (message: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+  const saveQueues = useRef(new Map<string, Promise<Record<string, unknown>>>());
+  const saveVersions = useRef(new Map<string, number>());
   const reminders = data.reminders.filter((item) => item.category === category);
   const updateLocal = (next: Reminder) => setData((current) => current ? { ...current, reminders: current.reminders.map((item) => item.id === next.id ? next : item) } : current);
   const save = async (next: Reminder, previous: Reminder, success = "Настройка сохранена") => {
+    const version = (saveVersions.current.get(next.id) || 0) + 1;
+    saveVersions.current.set(next.id, version);
+    setSavingIds((current) => new Set(current).add(next.id));
     updateLocal(next);
     setMessage("");
+    const request = (saveQueues.current.get(next.id) || Promise.resolve({})).catch(() => ({})).then(() =>
+      api({ action: "reminder", id: next.id, enabled: next.enabled, times: next.times, days: next.days, description: next.type === "exercise" ? next.description : undefined }));
+    saveQueues.current.set(next.id, request);
     try {
-      await api({ action: "reminder", id: next.id, enabled: next.enabled, times: next.times, days: next.days });
-      setMessage(success);
+      await request;
+      if (saveVersions.current.get(next.id) === version) setMessage(success);
     } catch {
-      updateLocal(previous);
-      setMessage("Не получилось сохранить настройку");
+      if (saveVersions.current.get(next.id) === version) {
+        updateLocal(previous);
+        setMessage("Не получилось сохранить настройку");
+      }
+    } finally {
+      if (saveVersions.current.get(next.id) === version) {
+        saveQueues.current.delete(next.id);
+        setSavingIds((current) => { const nextSet = new Set(current); nextSet.delete(next.id); return nextSet; });
+      }
     }
   };
   const heading = category === "basic" ? "Твои основные напоминания" : category === "hygiene" ? "Что напоминать" : "Полезные привычки";
@@ -686,27 +779,22 @@ function ReminderCatalog({ category, data, setData, setMessage }: {
       key={item.id}
       reminder={item}
       expanded={expandedId === item.id}
+      saving={savingIds.has(item.id)}
       onExpand={() => setExpandedId((current) => current === item.id ? null : item.id)}
-      onSave={(next, previous, success) => save(next, previous, success)}
+      onSave={(next, previous, success) => void save(next, previous, success)}
     />)}</div>
   </section>;
 }
 
-function ReminderSetupCard({ reminder, expanded, onExpand, onSave }: {
+function ReminderSetupCard({ reminder, expanded, saving, onExpand, onSave }: {
   reminder: Reminder;
   expanded: boolean;
+  saving: boolean;
   onExpand: () => void;
-  onSave: (next: Reminder, previous: Reminder, success?: string) => Promise<void>;
+  onSave: (next: Reminder, previous: Reminder, success?: string) => void;
 }) {
   const [draft, setDraft] = useState(reminder);
-  const [saving, setSaving] = useState(false);
   useEffect(() => setDraft(reminder), [reminder]);
-  const saveReminder = async (next: Reminder, previous: Reminder, success?: string) => {
-    if (saving) return;
-    setSaving(true);
-    try { await onSave(next, previous, success); }
-    finally { setSaving(false); }
-  };
   const addTime = () => {
     const used = new Set(draft.times);
     const last = draft.times[draft.times.length - 1] || "07:00";
@@ -717,9 +805,13 @@ function ReminderSetupCard({ reminder, expanded, onExpand, onSave }: {
   };
   const daySummary = draft.days.length === 7 ? "каждый день" : WEEKDAYS.filter((day) => draft.days.includes(day.id)).map((day) => day.short).join(", ");
   return <article className={`habit-setup-card ${reminder.enabled ? "enabled" : ""}`}>
-    <div className="habit-setup-top"><CareIcon type={reminder.type} /><div><h3>{reminderInfo(reminder).title}</h3><p>{reminderInfo(reminder).text}</p></div><ToggleSwitch checked={reminder.enabled} disabled={saving} label={`Включить ${reminderInfo(reminder).title}`} onChange={(enabled) => void saveReminder({ ...reminder, enabled }, reminder, enabled ? "Напоминание включено" : "Напоминание выключено")} /></div>
+    <div className="habit-setup-top"><CareIcon type={reminder.type} /><div><h3>{reminderInfo(reminder).title}</h3><p>{reminderInfo(reminder).text}</p></div><ToggleSwitch checked={reminder.enabled} label={`Включить ${reminderInfo(reminder).title}`} onChange={(enabled) => onSave({ ...reminder, enabled }, reminder, enabled ? "Напоминание включено" : "Напоминание выключено")} /></div>
     {reminder.enabled && <button type="button" className="schedule-summary" onClick={onExpand}><Clock3 /><span>{reminder.times.join(" · ")}<small>{daySummary}</small></span><ChevronRight className={expanded ? "rotated" : ""} /></button>}
     {reminder.enabled && expanded && <div className="schedule-editor">
+      {reminder.type === "exercise" && <label className="exercise-name">Какое упражнение?
+        <input value={draft.description} maxLength={60} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} placeholder="Например, приседания" />
+        <small>В уведомлении появится именно это название.</small>
+      </label>}
       <strong>Время</strong>
       <div className="time-row editable-times">{draft.times.map((time, index) => <span className="time-control" key={`${reminder.id}-${index}`}><input type="time" value={time} aria-label={`Время ${index + 1}`} onChange={(event) => setDraft((current) => ({ ...current, times: current.times.map((value, position) => position === index ? event.target.value : value) }))} /><button type="button" disabled={draft.times.length <= 1} onClick={() => setDraft((current) => ({ ...current, times: current.times.filter((_, position) => position !== index) }))}><X /></button></span>)}</div>
       {draft.times.length < 10 && <button type="button" className="add-time wide" onClick={addTime}><Plus /> Добавить время <small>{draft.times.length}/10</small></button>}
@@ -728,7 +820,7 @@ function ReminderSetupCard({ reminder, expanded, onExpand, onSave }: {
         const selected = current.days.includes(day.id) ? current.days.filter((value) => value !== day.id) : [...current.days, day.id];
         return { ...current, days: selected.length ? selected : current.days };
       })}>{day.short}</button>)}</div>
-      <button type="button" className="save-schedule" disabled={saving} onClick={async () => { await saveReminder({ ...draft, times: [...new Set(draft.times)].sort().slice(0, 10), days: [...draft.days].sort() }, reminder); onExpand(); }}><Save /> {saving ? "Сохраняю…" : "Сохранить расписание"}</button>
+      <button type="button" className="save-schedule" disabled={saving} onClick={() => { onSave({ ...draft, description: draft.description.trim(), times: [...new Set(draft.times)].sort().slice(0, 10), days: [...draft.days].sort() }, reminder); onExpand(); }}><Save /> {saving ? "Сохраняю…" : "Сохранить расписание"}</button>
     </div>}
   </article>;
 }
@@ -1049,17 +1141,23 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
   const [goal, setGoal] = useState(data.profile.goal);
   const [avatarId, setAvatarId] = useState<AvatarId>(avatarById(data.profile.avatarId).id);
   const [isEditing, setIsEditing] = useState(false);
+  const [notificationNote, setNotificationNote] = useState("");
   const goalLabel = goal === "water" ? "Пить больше воды" : goal === "food" ? "Регулярно кушать" : goal === "rest" ? "Больше отдыхать" : "Всё и сразу";
   const notificationStatus = typeof window !== "undefined" && "Notification" in window
-    ? Notification.permission === "granted" ? "Разрешены" : "Нажми, чтобы включить"
+    ? Notification.permission === "granted" ? "Включены · проверка при открытом приложении" : "Нажми, чтобы включить"
     : "Сначала добавь приложение на экран";
   const enableNotifications = async () => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") return;
-    const registration = await navigator.serviceWorker.ready;
-    registration.active?.postMessage({ type: "SHOW_REMINDER", title: "Ура, всё работает!", body: "Теперь я смогу мягко напоминать о заботе", tag: "welcome-notification" });
-    await post({ action: "profile", displayName: name, goal, avatarId }, "Уведомления включены", false);
+    setNotificationNote("");
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) { setNotificationNote("Этот браузер не поддерживает уведомления"); return; }
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") { setNotificationNote("Разрешение не выдано в настройках браузера"); return; }
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification("Уведомления работают", { body: "Это проверочное сообщение от «Не забывай»", tag: "notification-test", icon: asset("favicon.svg"), badge: asset("favicon.svg") });
+      await post({ action: "profile", displayName: name, goal, avatarId, notificationsEnabled: true }, "Проверочное уведомление отправлено", false);
+      setData((current) => current ? { ...current, profile: { ...current.profile, notificationsEnabled: true } } : current);
+      setNotificationNote("Проверочное уведомление отправлено");
+    } catch { setNotificationNote("Не получилось показать уведомление в этом браузере"); }
   };
   const chooseAvatar = (nextAvatar: AvatarId) => {
     setAvatarId(nextAvatar);
@@ -1091,6 +1189,7 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
       <div className="settings-row">{theme === "dark" ? <Moon /> : <Sun />}<span><strong>Тёмная тема</strong><small>{theme === "dark" ? "Включена" : "Выключена"}</small></span><ToggleSwitch checked={theme === "dark"} label="Переключить тему" onChange={(dark) => setTheme(dark ? "dark" : "light")} /></div>
       <button onClick={onOpenInstall}><Smartphone /><span><strong>Добавить на экран</strong><small>Инструкция для iPhone и Android</small></span><ChevronRight /></button>
       <button onClick={enableNotifications}><Bell /><span><strong>Уведомления</strong><small>{notificationStatus}</small></span><ChevronRight /></button>
+      {notificationNote && <p className="notification-note">{notificationNote}</p>}
       <a href={asset("privacy.html")}><ShieldCheck /><span><strong>Конфиденциальность</strong><small>Как хранятся данные</small></span><ChevronRight /></a>
       <button onClick={onSignOut}><LogOut /><span><strong>Выйти</strong><small>Данные останутся сохранены</small></span><ChevronRight /></button>
     </section>
