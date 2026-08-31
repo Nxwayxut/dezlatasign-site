@@ -256,10 +256,12 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .add-time svg { width: 15px; height: 15px; }
 .add-time small { margin-left: auto; color: var(--muted); }
 .healthy-schedule { width: 100%; margin: 0 0 9px; padding: 0; border: 0; background: transparent; color: var(--orange); font-size: 12px; text-align: left; cursor: pointer; }
+.check-actions { display: flex; gap: 8px; }
 .check-button { width: 100%; min-height: 40px; border: 0; border-radius: 14px; background: var(--translucent); color: var(--ink); font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; }
 .check-button svg { width: 17px; }
 .check-button b { background: var(--orange); color: white; border-radius: 10px; min-width: 21px; padding: 2px 5px; }
-.undo-check-button { background: var(--selected); color: var(--orange); border: 1px solid #f5660052; }
+.undo-check-button { width: 42px; min-width: 42px; min-height: 40px; border: 1px solid #f5660052; border-radius: 14px; background: var(--selected); color: var(--orange); display: grid; place-items: center; cursor: pointer; }
+.undo-check-button svg { width: 18px; }
 .edit-actions { margin-top: 24px; display: grid; grid-template-columns: .65fr 1.35fr; gap: 10px; }
 .cancel-edit { min-height: 56px; border: 1px solid var(--sand-2); border-radius: 999px; background: var(--sand); color: var(--muted); font-size: 16px; cursor: pointer; }
 .cancel-edit:disabled { opacity: .55; }
@@ -270,6 +272,13 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .bottom-nav button.active { color: var(--orange); font-weight: 700; }
 .bottom-nav button.active svg { stroke-width: 2.5; }
 
+.history-header { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.history-header button { margin-bottom: 2px; padding: 7px 10px; border: 1px solid var(--sand-2); border-radius: 999px; background: var(--sand); color: var(--orange); font-size: 12px; font-weight: 700; cursor: pointer; }
+.clear-confirm { margin: -10px 0 18px; padding: 16px; border: 1px solid var(--sand-2); border-radius: 20px; background: var(--sand); }
+.clear-confirm p { margin: 0 0 12px; font-weight: 700; }
+.clear-confirm > div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.clear-confirm button { min-height: 40px; border: 0; border-radius: 13px; background: var(--cream); color: var(--muted); cursor: pointer; }
+.clear-confirm button:last-child { background: var(--coral); color: white; font-weight: 700; }
 .history-day { margin: 0 0 24px; }
 .history-day h2, .chart-card h2 { margin: 0 0 12px; font-size: 18px; }
 .history-item { display: flex; align-items: center; gap: 13px; background: var(--sand); padding: 13px 16px; border-radius: 18px; margin-bottom: 9px; }
@@ -278,7 +287,8 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .history-item div:nth-child(2) { flex: 1; }
 .history-item strong, .history-item span { display: block; }
 .history-item span { color: var(--muted); font-size: 13px; margin-top: 2px; }
-.history-item > svg { width: 20px; color: var(--orange); }
+.history-delete { width: 36px; height: 36px; border: 0; border-radius: 12px; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.history-delete svg { width: 18px; }
 .empty-state { margin-top: 70px; text-align: center; }
 .empty-penguin { width: 190px; height: 165px; margin: 0 auto; overflow: hidden; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, var(--penguin-glow), transparent 70%); }
 .empty-penguin img { width: 160px; height: auto; }
