@@ -5,7 +5,7 @@ import {
   Hand, HeartPulse, Home, LayoutGrid, LoaderCircle, LogOut, Minus, Moon,
   MoreVertical, NotebookPen, Pencil, Plus, Save, Scale, ScanLine, Share2,
   ShieldCheck, Shirt, ShowerHead, Smile, Sparkles, Smartphone, SquarePlus, Sun,
-  Trash2, Undo2, UserRound, Utensils, X,
+  Trash2, Undo2, UserRound, X,
 } from "lucide-react";
 
 type User = { displayName: string; email: string; fullName: string | null; hasPassword: boolean };
@@ -19,9 +19,7 @@ type Checkin = { id: string; type: ReminderType; completedAt: string };
 type Profile = { email: string; displayName: string; goal: string; notificationsEnabled: boolean; onboardingCompleted: boolean; avatarId: AvatarId };
 type WeightSettings = { enabled: boolean; mode: "lose" | "maintain"; goalKg: number | null; calorieMode: boolean };
 type WeightEntry = { id: string; weightKg: number; recordedAt: string };
-type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "meal";
-type FoodReason = "hunger" | "schedule" | "pleasure" | "stress" | "boredom" | "other" | "";
-type FoodEntry = { id: string; mealType: MealType; title: string; calories: number | null; hunger: number | null; fullness: number | null; reason: FoodReason; recordedAt: string };
+type FoodEntry = { id: string; mealType: string; title: string; calories: number | null; hunger: number | null; fullness: number | null; reason: string; recordedAt: string };
 type AppData = { profile: Profile; reminders: Reminder[]; checkins: Checkin[]; weightSettings: WeightSettings; weightEntries: WeightEntry[]; foodEntries: FoodEntry[] };
 type Tab = "today" | "care" | "history" | "stats" | "profile";
 type Theme = "light" | "dark";
@@ -823,106 +821,6 @@ function ReminderSetupCard({ reminder, expanded, saving, onExpand, onSave }: {
       <button type="button" className="save-schedule" disabled={saving} onClick={() => { onSave({ ...draft, description: draft.description.trim(), times: [...new Set(draft.times)].sort().slice(0, 10), days: [...draft.days].sort() }, reminder); onExpand(); }}><Save /> {saving ? "Сохраняю…" : "Сохранить расписание"}</button>
     </div>}
   </article>;
-}
-
-function WeightSection({ data, setData, setMessage }: {
-  data: AppData;
-  setData: React.Dispatch<React.SetStateAction<AppData | null>>;
-  setMessage: (message: string) => void;
-}) {
-  const [goal, setGoal] = useState(data.weightSettings.goalKg?.toString() || "");
-  const [weight, setWeight] = useState("");
-  const [mealTitle, setMealTitle] = useState("");
-  const [mealType, setMealType] = useState<MealType>("breakfast");
-  const [calories, setCalories] = useState("");
-  const [hunger, setHunger] = useState("");
-  const [fullness, setFullness] = useState("");
-  const [reason, setReason] = useState<FoodReason>("");
-  const [form, setForm] = useState<"weight" | "food" | null>(null);
-  const [busy, setBusy] = useState(false);
-  const latestWeight = data.weightEntries[0]?.weightKg;
-  const firstWeight = data.weightEntries[data.weightEntries.length - 1]?.weightKg;
-  const goalNumber = data.weightSettings.goalKg;
-  const progress = firstWeight && latestWeight && goalNumber && firstWeight !== goalNumber
-    ? Math.max(0, Math.min(100, Math.round(Math.abs(firstWeight - latestWeight) / Math.abs(firstWeight - goalNumber) * 100))) : 0;
-  const todayMeals = data.foodEntries.filter((entry) => new Date(entry.recordedAt).toDateString() === new Date().toDateString());
-  const calorieTotal = todayMeals.reduce((sum, entry) => sum + (entry.calories || 0), 0);
-  const weekStart = Date.now() - 7 * 86400000;
-  const weekMeals = data.foodEntries.filter((entry) => new Date(entry.recordedAt).getTime() >= weekStart).length;
-  const weekCheckins = data.checkins.filter((entry) => new Date(entry.completedAt).getTime() >= weekStart);
-  const weekWalks = weekCheckins.filter((entry) => entry.type === "walk").length;
-  const weekSleep = weekCheckins.filter((entry) => entry.type === "sleep").length;
-
-  const saveSettings = async (next: WeightSettings) => {
-    const previous = data.weightSettings;
-    setData((current) => current ? { ...current, weightSettings: next } : current);
-    setMessage("");
-    try { await api({ action: "weightSettings", ...next }); setMessage("Настройки режима сохранены"); }
-    catch { setData((current) => current ? { ...current, weightSettings: previous } : current); setMessage("Не получилось сохранить настройки"); }
-  };
-  const saveGoal = () => {
-    const parsed = goal ? Number(goal) : null;
-    if (parsed !== null && (parsed < 25 || parsed > 400)) { setMessage("Проверь желаемый вес"); return; }
-    void saveSettings({ ...data.weightSettings, goalKg: parsed });
-  };
-  const addWeight = async () => {
-    const parsed = Number(weight);
-    if (!parsed || parsed < 25 || parsed > 400) { setMessage("Проверь значение веса"); return; }
-    setBusy(true); setMessage("");
-    try {
-      const payload = await api({ action: "addWeight", weightKg: parsed });
-      const entry = payload.entry as WeightEntry;
-      setData((current) => current ? { ...current, weightEntries: [entry, ...current.weightEntries] } : current);
-      setWeight(""); setForm(null); setMessage("Вес записан. Одна цифра ничего о тебе не решает");
-    } catch { setMessage("Не получилось записать вес"); }
-    finally { setBusy(false); }
-  };
-  const addFood = async () => {
-    if (!mealTitle.trim()) { setMessage("Напиши, что было в приёме пищи"); return; }
-    setBusy(true); setMessage("");
-    try {
-      const payload = await api({ action: "addFood", title: mealTitle, mealType, calories, hunger, fullness, reason });
-      const entry = payload.entry as FoodEntry;
-      setData((current) => current ? { ...current, foodEntries: [entry, ...current.foodEntries] } : current);
-      setMealTitle(""); setCalories(""); setHunger(""); setFullness(""); setReason(""); setForm(null); setMessage("Приём пищи добавлен без суда и следствия");
-    } catch { setMessage("Не получилось добавить запись"); }
-    finally { setBusy(false); }
-  };
-  const removeEntry = async (kind: "food" | "weight", id: string) => {
-    const previousFood = data.foodEntries;
-    const previousWeight = data.weightEntries;
-    setData((current) => current ? { ...current, foodEntries: kind === "food" ? current.foodEntries.filter((item) => item.id !== id) : current.foodEntries, weightEntries: kind === "weight" ? current.weightEntries.filter((item) => item.id !== id) : current.weightEntries } : current);
-    try { await api({ action: kind === "food" ? "deleteFood" : "deleteWeight", id }); }
-    catch { setData((current) => current ? { ...current, foodEntries: previousFood, weightEntries: previousWeight } : current); setMessage("Не получилось удалить запись"); }
-  };
-
-  return <section className="weight-mode">
-    <div className="weight-enable-card"><span className="section-symbol weight"><Scale /></span><div><strong>Бережный режим</strong><small>{data.weightSettings.enabled ? "Включён" : "Не будет считать ничего без тебя"}</small></div><ToggleSwitch checked={data.weightSettings.enabled} label="Включить режим снижения веса" onChange={(enabled) => void saveSettings({ ...data.weightSettings, enabled })} /></div>
-    {data.weightSettings.enabled && <>
-      <div className="weight-summary">
-        <div><small>Последняя отметка</small><strong>{latestWeight ? `${latestWeight} кг` : "Пока нет"}</strong></div>
-        <div><small>Твоя цель</small><strong>{goalNumber ? `${goalNumber} кг` : "Не задана"}</strong></div>
-        {!!goalNumber && !!firstWeight && <div className="goal-progress"><span style={{ width: `${progress}%` }} /></div>}
-      </div>
-      <label className="weight-mode-select">Сейчас я хочу<select value={data.weightSettings.mode} onChange={(event) => void saveSettings({ ...data.weightSettings, mode: event.target.value as "lose" | "maintain" })}><option value="lose">Постепенно снижать вес</option><option value="maintain">Удерживать вес и привычки</option></select></label>
-      <div className="goal-editor"><label>Желаемый вес<input type="number" min="25" max="400" step="0.1" inputMode="decimal" value={goal} onChange={(event) => setGoal(event.target.value)} placeholder="Например, 70" /></label><button type="button" onClick={saveGoal}>Сохранить</button></div>
-      <div className="gentle-setting"><div><strong>Показывать калории</strong><small>Можно оставить только названия блюд и ощущения</small></div><ToggleSwitch checked={data.weightSettings.calorieMode} label="Показывать калории" onChange={(calorieMode) => void saveSettings({ ...data.weightSettings, calorieMode })} /></div>
-      <div className="weight-actions"><button type="button" onClick={() => setForm(form === "food" ? null : "food")}><Utensils /> Записать еду</button><button type="button" onClick={() => setForm(form === "weight" ? null : "weight")}><Scale /> Отметить вес</button></div>
-      {form === "weight" && <div className="wellness-form"><label>Вес сейчас, кг<input type="number" min="25" max="400" step="0.1" inputMode="decimal" value={weight} onChange={(event) => setWeight(event.target.value)} /></label><button type="button" className="primary-button" disabled={busy} onClick={addWeight}>{busy ? "Сохраняю…" : "Добавить"}</button></div>}
-      {form === "food" && <div className="wellness-form food-form">
-        <label>Приём пищи<select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)}><option value="breakfast">Завтрак</option><option value="lunch">Обед</option><option value="dinner">Ужин</option><option value="snack">Перекус</option></select></label>
-        <label>Что было<input value={mealTitle} maxLength={80} onChange={(event) => setMealTitle(event.target.value)} placeholder="Например, суп и хлеб" /></label>
-        {data.weightSettings.calorieMode && <label>Калории, если знаешь<input type="number" min="0" max="10000" inputMode="numeric" value={calories} onChange={(event) => setCalories(event.target.value)} placeholder="Необязательно" /></label>}
-        <div className="feeling-grid"><label>Голод до<select value={hunger} onChange={(event) => setHunger(event.target.value)}><option value="">Не отмечать</option>{[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value} из 5</option>)}</select></label><label>Сытость после<select value={fullness} onChange={(event) => setFullness(event.target.value)}><option value="">Не отмечать</option>{[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value} из 5</option>)}</select></label></div>
-        <label>Почему захотелось поесть<select value={reason} onChange={(event) => setReason(event.target.value as FoodReason)}><option value="">Не отмечать</option><option value="hunger">Физический голод</option><option value="schedule">Пришло время поесть</option><option value="pleasure">Хотелось удовольствия</option><option value="stress">Стресс или тревога</option><option value="boredom">Скука</option><option value="other">Другая причина</option></select></label>
-        <button type="button" className="primary-button" disabled={busy} onClick={addFood}>{busy ? "Сохраняю…" : "Добавить без оценки"}</button>
-      </div>}
-      <div className="weekly-kind-report"><div className="catalog-heading"><h2>Последние 7 дней</h2><span>не оценка, а наблюдение</span></div><div><span><strong>{weekMeals}</strong><small>записей о еде</small></span><span><strong>{weekWalks}</strong><small>прогулок</small></span><span><strong>{weekSleep}</strong><small>вечеров со сном</small></span></div><p>{weekMeals || weekWalks || weekSleep ? "Ты уже собираешь картину своих привычек. Продолжаем без гонки." : "Начни с одной удобной привычки — этого достаточно."}</p></div>
-      <div className="today-food"><div className="catalog-heading"><h2>Сегодня</h2>{data.weightSettings.calorieMode && <span>{calorieTotal} ккал записано</span>}</div>{!todayMeals.length ? <p>Записей пока нет. Это не провал. Это пустой список.</p> : todayMeals.map((entry) => <div className="wellness-entry" key={entry.id}><Utensils /><div><strong>{entry.title}</strong><small>{new Date(entry.recordedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}{data.weightSettings.calorieMode && entry.calories !== null ? ` · ${entry.calories} ккал` : ""}</small></div><button type="button" onClick={() => void removeEntry("food", entry.id)} aria-label="Удалить запись"><Trash2 /></button></div>)}</div>
-      {!!data.weightEntries.length && <div className="weight-history"><div className="catalog-heading"><h2>Изменение веса</h2><span>важна тенденция</span></div>{data.weightEntries.slice(0, 6).map((entry) => <div className="wellness-entry" key={entry.id}><Scale /><div><strong>{entry.weightKg} кг</strong><small>{new Date(entry.recordedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}</small></div><button type="button" onClick={() => void removeEntry("weight", entry.id)} aria-label="Удалить отметку веса"><Trash2 /></button></div>)}</div>}
-      <div className="weight-safety"><HeartPulse /><p>Приложение помогает замечать привычки, а не назначает диету. При беременности, хронических заболеваниях или расстройстве пищевого поведения план лучше обсуждать со специалистом.</p></div>
-    </>}
-  </section>;
 }
 
 function TodayView({ data, setData, todayCheckins, onOpenCare }: {
