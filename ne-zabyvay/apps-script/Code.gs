@@ -41,6 +41,8 @@ function doPost(e) {
     if (action === "toggle") return json_(toggleReminder_(email, body));
     if (action === "times") return json_(updateTimes_(email, body));
     if (action === "checkin") return json_(addCheckin_(email, body));
+    if (action === "deleteCheckin") return json_(deleteCheckin_(email, body));
+    if (action === "deleteCheckins") return json_(deleteCheckins_(email, body));
     if (action === "profile") return json_(updateProfile_(email, body));
     return json_({ ok: false, error: "Неизвестная команда" });
   } catch (error) {
@@ -169,8 +171,30 @@ function updateTimes_(email, body) {
 function addCheckin_(email, body) {
   const type = String(body.type || "");
   if (["water", "food", "rest"].indexOf(type) === -1) throw new Error("Неизвестный тип");
-  append_("Checkins", { id: Utilities.getUuid(), ownerEmail: email, type: type, completedAt: new Date().toISOString() });
+  const requestedId = String(body.id || "");
+  const id = /^[a-zA-Z0-9-]{8,80}$/.test(requestedId) ? requestedId : Utilities.getUuid();
+  if (!findBy_("Checkins", "id", id)) {
+    append_("Checkins", { id: id, ownerEmail: email, type: type, completedAt: new Date().toISOString() });
+  }
+  return { ok: true, id: id };
+}
+
+function deleteCheckin_(email, body) {
+  const row = findBy_("Checkins", "id", String(body.id || ""));
+  if (!row || row.ownerEmail !== email) throw new Error("Отметка не найдена");
+  sheet_("Checkins").deleteRow(row._row);
   return { ok: true };
+}
+
+function deleteCheckins_(email, body) {
+  const ids = Array.isArray(body.ids) ? body.ids.map(String).slice(0, 100) : [];
+  const allowed = new Set(ids);
+  const matches = rows_("Checkins").filter(function (row) {
+    return row.ownerEmail === email && allowed.has(String(row.id));
+  }).sort(function (a, b) { return b._row - a._row; });
+  const sheet = sheet_("Checkins");
+  matches.forEach(function (row) { sheet.deleteRow(row._row); });
+  return { ok: true, deleted: matches.length };
 }
 
 function updateProfile_(email, body) {
