@@ -101,6 +101,12 @@ h1, h2, h3, strong { font-weight: 700; }
 .design-care-icon.rest img { top: -616%; }
 .design-care-icon.heart img { width: 958.5%; left: -129.3%; top: -1168.3%; }
 .design-care-icon.tiny-icon { width: 42px; height: 42px; min-width: 42px; margin: 0; }
+.habit-care-icon { width: 62px; height: 62px; min-width: 62px; border-radius: 50%; background: var(--cream); color: var(--orange); display: grid; place-items: center; box-shadow: 0 9px 14px #4d362616; }
+.habit-care-icon svg { width: 29px; height: 29px; stroke-width: 2; }
+.habit-care-icon.tiny-icon { width: 42px; height: 42px; min-width: 42px; }
+.habit-care-icon.tiny-icon svg { width: 21px; height: 21px; }
+.habit-care-icon.walk, .habit-care-icon.weigh-in { color: #78a25d; }
+.habit-care-icon.food-diary { color: var(--coral); }
 .design-penguin { width: 100%; position: relative; overflow: hidden; flex-shrink: 0; forced-color-adjust: none; }
 .design-penguin img { position: absolute; height: auto; max-width: none; forced-color-adjust: none; }
 .design-penguin .penguin-transparent { display: none; }
@@ -210,6 +216,105 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .goal-list > button > svg { width: 22px; color: var(--orange); }
 .about-continue { margin-top: 42px; flex-shrink: 0; }
 
+.care-screen { padding-bottom: 124px; }
+.care-intro { margin: -8px 0 22px; color: var(--muted); font-size: 16px; line-height: 1.45; }
+.care-section-list { display: grid; gap: 13px; }
+.care-section-list > button { width: 100%; min-height: 112px; padding: 17px; border: 1px solid var(--sand-2); border-radius: 28px; background: var(--sand); color: var(--ink); display: flex; align-items: center; gap: 15px; text-align: left; cursor: pointer; box-shadow: 0 6px 18px #5b3f2b0d; }
+.care-section-list > button > span:nth-child(2) { min-width: 0; flex: 1; }
+.care-section-list strong, .care-section-list small, .care-section-list em { display: block; }
+.care-section-list strong { font-size: 21px; }
+.care-section-list small { margin-top: 3px; color: var(--muted); font-size: 14px; line-height: 1.25; }
+.care-section-list em { margin-top: 9px; color: var(--orange); font-size: 12px; font-style: normal; font-weight: 700; }
+.care-section-list > button > svg { width: 20px; color: var(--muted); }
+.section-symbol { width: 60px; height: 60px; min-width: 60px; border-radius: 20px; background: var(--cream); color: var(--orange); display: grid; place-items: center; }
+.section-symbol svg { width: 29px; height: 29px; stroke-width: 2; }
+.section-symbol.hygiene { color: var(--blue); }
+.section-symbol.weight { color: #78a25d; }
+.care-penguin-note { min-height: 96px; margin-top: 20px; padding: 12px 17px 12px 105px; border-radius: 24px; background: var(--selected); position: relative; display: flex; align-items: center; overflow: hidden; }
+.care-penguin-note img { position: absolute; width: 105px; left: 4px; bottom: -22px; }
+.care-penguin-note p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.35; }
+.care-detail-header { margin-bottom: 22px; display: flex; align-items: center; gap: 13px; }
+.care-detail-header > button { width: 46px; height: 46px; min-width: 46px; border: 0; border-radius: 50%; background: var(--sand); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.care-detail-header svg { width: 23px; }
+.care-detail-header p { margin: 0 0 2px; color: var(--muted); font-size: 14px; }
+.care-detail-header h1 { margin: 0; font-size: 34px; line-height: 1; letter-spacing: -1.2px; }
+.catalog-section { margin-top: 25px; }
+.catalog-heading { margin-bottom: 12px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.catalog-heading h2 { margin: 0; font-size: 21px; }
+.catalog-heading span { color: var(--muted); font-size: 12px; }
+.habit-list { display: grid; gap: 11px; }
+.habit-setup-card { padding: 15px; border: 1px solid var(--sand-2); border-radius: 24px; background: var(--sand); transition: opacity .18s; }
+.habit-setup-card:not(.enabled) { opacity: .75; }
+.habit-setup-top { display: flex; align-items: center; gap: 12px; }
+.habit-setup-top > .design-care-icon, .habit-setup-top > .habit-care-icon { width: 50px; height: 50px; min-width: 50px; box-shadow: none; }
+.habit-setup-top > .habit-care-icon svg { width: 24px; height: 24px; }
+.habit-setup-top > div { min-width: 0; flex: 1; }
+.habit-setup-top h3 { margin: 0 0 3px; font-size: 17px; line-height: 1.15; }
+.habit-setup-top p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.25; }
+.schedule-summary { width: 100%; min-height: 48px; margin-top: 12px; padding: 8px 10px; border: 0; border-radius: 15px; background: var(--cream); color: var(--ink); display: flex; align-items: center; gap: 9px; text-align: left; cursor: pointer; }
+.schedule-summary > svg:first-child { width: 18px; color: var(--orange); }
+.schedule-summary > span { min-width: 0; flex: 1; font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-summary small { display: block; margin-top: 2px; color: var(--muted); font-weight: 400; }
+.schedule-summary > svg:last-child { width: 17px; color: var(--muted); transition: transform .18s; }
+.schedule-summary > svg.rotated { transform: rotate(90deg); }
+.schedule-editor { margin-top: 10px; padding: 13px; border-radius: 18px; background: var(--cream); }
+.schedule-editor > strong { display: block; margin: 3px 0 8px; font-size: 13px; }
+.schedule-editor .time-row { margin: 0 0 10px; }
+.add-time.wide { width: 100%; margin: 0 0 15px; }
+.weekday-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.weekday-picker button { aspect-ratio: 1; min-width: 0; padding: 0; border: 1px solid var(--sand-2); border-radius: 50%; background: var(--sand); color: var(--muted); font-size: 10px; cursor: pointer; }
+.weekday-picker button.active { border-color: var(--orange); background: var(--orange); color: white; font-weight: 700; }
+.save-schedule { width: 100%; min-height: 42px; margin-top: 13px; border: 0; border-radius: 14px; background: var(--selected); color: var(--orange); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.save-schedule svg { width: 16px; }
+
+.weight-mode { display: grid; gap: 12px; }
+.weight-enable-card, .gentle-setting { padding: 15px; border: 1px solid var(--sand-2); border-radius: 24px; background: var(--sand); display: flex; align-items: center; gap: 12px; }
+.weight-enable-card > div, .gentle-setting > div { min-width: 0; flex: 1; }
+.weight-enable-card strong, .weight-enable-card small, .gentle-setting strong, .gentle-setting small { display: block; }
+.weight-enable-card small, .gentle-setting small { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.25; }
+.weight-summary { padding: 18px; border-radius: 24px; background: #769b621c; display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.weight-summary small, .weight-summary strong { display: block; }
+.weight-summary small { color: var(--muted); font-size: 11px; }
+.weight-summary strong { margin-top: 4px; font-size: 21px; }
+.goal-progress { grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--sand-2); overflow: hidden; }
+.goal-progress span { display: block; height: 100%; border-radius: inherit; background: #78a25d; }
+.goal-editor { padding: 14px; border-radius: 22px; background: var(--sand); display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px; }
+.goal-editor label { color: var(--muted); font-size: 12px; }
+.goal-editor input { width: 100%; min-height: 45px; margin-top: 6px; padding: 0 12px; border: 1px solid var(--sand-2); border-radius: 14px; background: var(--cream); outline: none; }
+.goal-editor button { min-height: 45px; padding: 0 13px; border: 0; border-radius: 14px; background: var(--orange); color: white; font-weight: 700; cursor: pointer; }
+.weight-mode-select { padding: 14px; border-radius: 22px; background: var(--sand); color: var(--muted); font-size: 12px; font-weight: 700; }
+.weight-mode-select select { width: 100%; min-height: 46px; margin-top: 6px; padding: 0 12px; border: 1px solid var(--sand-2); border-radius: 14px; background: var(--cream); color: var(--ink); outline: none; }
+.weight-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.weight-actions button { min-height: 62px; padding: 8px; border: 1px solid var(--sand-2); border-radius: 18px; background: var(--sand); color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.weight-actions svg { width: 19px; color: var(--orange); }
+.wellness-form { padding: 16px; border: 1px solid var(--sand-2); border-radius: 24px; background: var(--sand); }
+.wellness-form label { display: block; margin-bottom: 12px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.wellness-form input, .wellness-form select { width: 100%; min-height: 48px; margin-top: 6px; padding: 0 13px; border: 1px solid var(--sand-2); border-radius: 15px; background: var(--cream); color: var(--ink); outline: none; }
+.wellness-form .primary-button { min-height: 48px; font-size: 16px; }
+.feeling-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.today-food, .weight-history { margin-top: 8px; padding: 16px; border-radius: 24px; background: var(--sand); }
+.today-food > p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.35; }
+.wellness-entry { min-height: 58px; padding: 9px 0; border-bottom: 1px solid var(--divider); display: flex; align-items: center; gap: 10px; }
+.wellness-entry:last-child { border-bottom: 0; }
+.wellness-entry > svg { width: 20px; color: var(--orange); }
+.wellness-entry > div { min-width: 0; flex: 1; }
+.wellness-entry strong, .wellness-entry small { display: block; }
+.wellness-entry strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.wellness-entry small { margin-top: 3px; color: var(--muted); font-size: 11px; }
+.wellness-entry button { width: 35px; height: 35px; padding: 0; border: 0; border-radius: 11px; background: var(--cream); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.wellness-entry button svg { width: 16px; }
+.weight-safety { padding: 14px; border-radius: 20px; background: var(--selected); display: flex; align-items: flex-start; gap: 10px; }
+.weight-safety svg { width: 20px; min-width: 20px; color: var(--orange); }
+.weight-safety p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.weekly-kind-report { padding: 16px; border-radius: 24px; background: var(--progress-bg); color: var(--progress-ink); }
+.weekly-kind-report .catalog-heading span { color: inherit; opacity: .65; }
+.weekly-kind-report > div:nth-child(2) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.weekly-kind-report > div:nth-child(2) > span { padding: 9px 5px; border-radius: 14px; background: #ffffff12; text-align: center; }
+.weekly-kind-report strong, .weekly-kind-report small { display: block; }
+.weekly-kind-report strong { font-size: 20px; }
+.weekly-kind-report small { margin-top: 3px; font-size: 9px; opacity: .72; }
+.weekly-kind-report > p { margin: 12px 0 0; font-size: 12px; line-height: 1.4; opacity: .8; }
+
 .app-shell { min-height: 100svh; }
 .app-scroll { min-height: 100svh; padding-bottom: 105px; }
 .screen { padding: 32px 24px 28px; }
@@ -234,9 +339,13 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .edit-status { margin: -3px 0 12px; padding: 9px 12px; border-radius: 13px; background: var(--selected); color: var(--orange); font-size: 13px; text-align: center; }
 .edit-status.error { background: #ef7b6e1c; color: var(--coral); }
 .reminder-stack { display: grid; gap: 14px; }
+.today-empty { padding: 17px; border-radius: 24px; background: var(--sand); display: flex; align-items: center; gap: 13px; }
+.today-empty .design-care-icon { width: 50px; height: 50px; min-width: 50px; box-shadow: none; }
+.today-empty h3 { margin: 0 0 3px; }
+.today-empty p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.3; }
 .reminder-card { border: 1px solid var(--sand-2); background: var(--sand); border-radius: 28px; padding: 18px; display: flex; gap: 14px; box-shadow: 0 5px 16px #674b3410; transition: opacity .2s; }
 .reminder-card.disabled { opacity: .55; }
-.reminder-card > .design-care-icon { width: 58px; height: 58px; min-width: 58px; }
+.reminder-card > .design-care-icon, .reminder-card > .habit-care-icon { width: 58px; height: 58px; min-width: 58px; }
 .reminder-body { min-width: 0; flex: 1; }
 .reminder-top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
 .reminder-top h3 { margin: 2px 0 2px; font-size: 23px; }
@@ -271,9 +380,9 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .cancel-edit { min-height: 56px; border: 1px solid var(--sand-2); border-radius: 999px; background: var(--sand); color: var(--muted); font-size: 16px; cursor: pointer; }
 .cancel-edit:disabled { opacity: .55; }
 .reminder-save { margin-top: 0; min-height: 56px; font-size: 19px; }
-.bottom-nav { position: absolute; z-index: 20; bottom: 0; left: 0; right: 0; height: 92px; padding: 10px 7px max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 1fr); background: var(--nav-bg); backdrop-filter: blur(15px); border-top: 1px solid var(--sand-2); }
+.bottom-nav { position: absolute; z-index: 20; bottom: 0; left: 0; right: 0; height: 92px; padding: 10px 4px max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, 1fr); background: var(--nav-bg); backdrop-filter: blur(15px); border-top: 1px solid var(--sand-2); }
 .bottom-nav button { border: 0; background: transparent; color: #72665e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; font-size: 12px; }
-.bottom-nav svg { width: 25px; height: 25px; stroke-width: 1.8; }
+.bottom-nav svg { width: 23px; height: 23px; stroke-width: 1.8; }
 .bottom-nav button.active { color: var(--orange); font-weight: 700; }
 .bottom-nav button.active svg { stroke-width: 2.5; }
 
@@ -317,6 +426,15 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .stat-grid strong, .stat-grid span { display: block; }
 .stat-grid strong { font-size: 24px; }
 .stat-grid span { font-size: 12px; color: var(--muted); }
+.stat-section-title { margin: 24px 0 11px; font-size: 20px; }
+.category-stats { display: grid; gap: 8px; }
+.category-stats article { min-height: 64px; padding: 11px 15px; border-radius: 19px; background: var(--sand); display: flex; align-items: center; gap: 12px; }
+.category-stats article > svg { width: 24px; color: var(--orange); }
+.category-stats article:nth-child(2) > svg { color: var(--blue); }
+.category-stats article:nth-child(3) > svg { color: #78a25d; }
+.category-stats strong, .category-stats small { display: block; }
+.category-stats strong { font-size: 20px; }
+.category-stats small { color: var(--muted); font-size: 12px; }
 
 .profile-head { display: flex; align-items: center; gap: 16px; }
 .profile-head h1 { font-size: 34px; }
