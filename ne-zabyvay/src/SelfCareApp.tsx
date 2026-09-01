@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, BarChart3, BedDouble, Bell, CalendarDays, Camera, Check, CheckCircle2,
   ChevronLeft, ChevronRight, ClipboardList, Clock3, Delete, Download, Footprints,
-  Hand, HeartPulse, Home, LayoutGrid, LoaderCircle, LogOut, Minus, Moon,
-  MoreVertical, NotebookPen, Pencil, Plus, Save, Scale, ScanLine, Share2,
-  ShieldCheck, Shirt, ShowerHead, Smile, Sparkles, Smartphone, SquarePlus, Sun,
+  Hand, Home, LayoutGrid, LoaderCircle, LogOut, Minus, Moon,
+  MoreVertical, NotebookPen, Pencil, Plus, Save, ScanLine, Share2,
+  ShieldCheck, Shirt, ShowerHead, Smile, Smartphone, SquarePlus, Sun,
   Trash2, Undo2, UserRound, X,
 } from "lucide-react";
 
@@ -152,6 +152,19 @@ function HabitGlyph({ type }: { type: Exclude<ReminderType, BasicReminderType> }
   if (type === "walk") return <svg viewBox="0 0 64 64"><ellipse cx="22" cy="36" rx="9" ry="15" transform="rotate(-18 22 36)" /><circle cx="12" cy="17" r="4" /><circle cx="20" cy="13" r="4" /><circle cx="29" cy="15" r="4" /><ellipse cx="44" cy="40" rx="9" ry="15" transform="rotate(18 44 40)" /><circle cx="35" cy="20" r="4" /><circle cx="44" cy="17" r="4" /><circle cx="53" cy="21" r="4" /></svg>;
   if (type === "sleep") return <svg viewBox="0 0 64 64"><path d="M49 42A23 23 0 0 1 23 12a23 23 0 1 0 26 30Z" /></svg>;
   return <svg viewBox="0 0 64 64"><path d="M8 24h8v-7h8v30h-8v-7H8V24Zm48 0v16h-8v7h-8V17h8v7h8ZM24 27h16v10H24V27Z" /></svg>;
+}
+
+function SectionGlyph({ category }: { category: ReminderCategory }) {
+  if (category === "basic") return <svg viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M32 55C16 44 7 35 7 23 7 13 14 7 23 7c5 0 8 2 9 6 2-4 5-6 10-6 9 0 15 6 15 16 0 12-9 21-25 32Z" />
+    <path className="glyph-cut" d="M14 30h10l4-10 7 21 5-11h11v5H44l-10 17-7-21-1 4H14Z" />
+  </svg>;
+  if (category === "hygiene") return <svg viewBox="0 0 64 64" aria-hidden="true">
+    <path d="m30 5 5 15 15 5-15 5-5 15-5-15-15-5 15-5 5-15Zm20 30 3 9 9 3-9 3-3 9-3-9-9-3 9-3 3-9ZM12 40l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6Z" />
+  </svg>;
+  return <svg viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M29 8h6v8h15v6h-4l10 22H37c0-8 5-14 12-14l-4-8H35v27h10v7H19v-7h10V22H19l-4 8c7 0 12 6 12 14H8l10-22h-4v-6h15V8Z" />
+  </svg>;
 }
 
 function CareIcon({ type, className = "" }: { type: ReminderType | "heart"; className?: string }) {
@@ -701,10 +714,10 @@ function RegistrationFinish({ data, saving, post }: {
 function CareSectionsView({ data, setData }: { data: AppData; setData: React.Dispatch<React.SetStateAction<AppData | null>> }) {
   const [section, setSection] = useState<ReminderCategory | null>(null);
   const [message, setMessage] = useState("");
-  const sections: Array<{ id: ReminderCategory; title: string; text: string; Icon: typeof HeartPulse }> = [
-    { id: "basic", title: "Базовая забота", text: "Вода, еда и отдых", Icon: HeartPulse },
-    { id: "hygiene", title: "Гигиена", text: "Ежедневные и еженедельные дела", Icon: Sparkles },
-    { id: "weight", title: "Снижение веса", text: "Прогулка, сон и упражнения", Icon: Scale },
+  const sections: Array<{ id: ReminderCategory; title: string; text: string }> = [
+    { id: "basic", title: "Базовая забота", text: "Вода, еда и отдых" },
+    { id: "hygiene", title: "Гигиена", text: "Ежедневные и еженедельные дела" },
+    { id: "weight", title: "Снижение веса", text: "Прогулка, сон и упражнения" },
   ];
 
   if (section) {
@@ -726,7 +739,7 @@ function CareSectionsView({ data, setData }: { data: AppData; setData: React.Dis
       const reminders = data.reminders.filter((reminder) => reminder.category === item.id);
       const enabled = reminders.filter((reminder) => reminder.enabled).length;
       return <button key={item.id} type="button" onClick={() => setSection(item.id)}>
-        <span className={`section-symbol ${item.id}`}><item.Icon /></span>
+        <span className={`section-symbol ${item.id}`}><SectionGlyph category={item.id} /></span>
         <span><strong>{item.title}</strong><small>{item.text}</small><em>{enabled ? `${enabled} включено` : "Пока выключено"}</em></span>
         <ChevronRight />
       </button>;
@@ -1030,7 +1043,7 @@ function StatsView({ data }: { data: AppData }) {
     <section className="stat-hero"><CareIcon type="heart" /><strong>{checkins.length}</strong><span>{careWord(checkins.length)} о себе за 7 дней</span></section>
     <section className="chart-card"><h2>Неделя</h2><div className="bars">{days.map((day) => <div className="bar-column" key={day.label}><div className="bar-track"><div className="bar" style={{ height: `${Math.max(8, day.count / max * 100)}%` }}><span>{day.count || ""}</span></div></div><b>{day.label}</b></div>)}</div></section>
     <div className="stat-grid">{(["water", "food", "rest"] as BasicReminderType[]).map((type) => { const meta = META[type]; const count = checkins.filter((item) => item.type === type).length; return <article key={type}><CareIcon type={type} className="tiny-icon" /><strong>{count}</strong><span>{meta.title}</span></article>; })}</div>
-    <h2 className="stat-section-title">По разделам</h2><div className="category-stats"><article><HeartPulse /><span><strong>{categoryCount("basic")}</strong><small>Базовая забота</small></span></article><article><Sparkles /><span><strong>{categoryCount("hygiene")}</strong><small>Гигиена</small></span></article><article><Scale /><span><strong>{categoryCount("weight")}</strong><small>Снижение веса</small></span></article></div>
+    <h2 className="stat-section-title">По разделам</h2><div className="category-stats"><article><span className="category-stat-icon basic"><SectionGlyph category="basic" /></span><span><strong>{categoryCount("basic")}</strong><small>Базовая забота</small></span></article><article><span className="category-stat-icon hygiene"><SectionGlyph category="hygiene" /></span><span><strong>{categoryCount("hygiene")}</strong><small>Гигиена</small></span></article><article><span className="category-stat-icon weight"><SectionGlyph category="weight" /></span><span><strong>{categoryCount("weight")}</strong><small>Снижение веса</small></span></article></div>
   </div>;
 }
 
