@@ -93,14 +93,14 @@ h1, h2, h3, strong { font-weight: 700; }
 .round-icon.orange svg, .tiny-icon.orange svg { color: var(--orange); }
 .round-icon.yellow svg, .tiny-icon.yellow svg { color: var(--yellow); }
 .round-icon.coral svg, .tiny-icon.coral svg { color: var(--coral); }
-.design-care-icon { width: 62px; height: 62px; min-width: 62px; border-radius: 50%; position: relative; overflow: hidden; display: block; box-shadow: 0 9px 14px #4d362616; }
-.design-care-icon img { position: absolute; max-width: none; height: auto; pointer-events: none; }
-.design-care-icon.water img, .design-care-icon.food img, .design-care-icon.rest img { width: 646%; left: -97.5%; }
-.design-care-icon.water img { top: -288.5%; }
-.design-care-icon.food img { top: -452%; }
-.design-care-icon.rest img { top: -616%; }
-.design-care-icon.heart img { width: 958.5%; left: -129.3%; top: -1168.3%; }
+.design-care-icon { width: 62px; height: 62px; min-width: 62px; border-radius: 50%; position: relative; overflow: hidden; display: grid; place-items: center; background: var(--cream); box-shadow: 0 9px 14px #4d362616; }
+.design-care-icon svg { width: 39px; height: 39px; fill: currentColor; stroke: none; }
+.design-care-icon svg .glyph-cut { fill: var(--cream); }
+.design-care-icon.water { color: var(--blue); }
+.design-care-icon.food, .design-care-icon.heart { color: var(--orange); }
+.design-care-icon.rest { color: var(--yellow); }
 .design-care-icon.tiny-icon { width: 42px; height: 42px; min-width: 42px; margin: 0; }
+.design-care-icon.tiny-icon svg { width: 28px; height: 28px; }
 .habit-care-icon { width: 62px; height: 62px; min-width: 62px; border-radius: 50%; background: var(--cream); color: var(--orange); display: grid; place-items: center; box-shadow: 0 9px 14px #4d362616; }
 .habit-care-icon svg { width: 40px; height: 40px; fill: currentColor; stroke: none; }
 .habit-care-icon svg .glyph-cut { fill: var(--cream); }
@@ -150,6 +150,11 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .email-field input:focus, .about-name input:focus { border-color: var(--muted); box-shadow: 0 0 0 4px #f5660010; }
 .email-field + .primary-button { margin-top: 18px; }
 .password-field, .password-repeat { margin-top: 12px; }
+.password-input-wrap { display: block; position: relative; }
+.password-input-wrap input { padding-right: 60px; }
+.password-input-wrap button { position: absolute; top: 50%; right: 10px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.password-input-wrap button:active { background: var(--soft-active); }
+.password-input-wrap button svg { width: 23px; height: 23px; stroke-width: 2; }
 .email-screen .email-field:first-of-type { margin-top: 28px; }
 .auth-divider { height: 34px; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
 .auth-divider::before, .auth-divider::after { content: ""; height: 1px; flex: 1; background: var(--sand-2); }
@@ -222,8 +227,13 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .goal-list { display: grid; gap: 12px; }
 .goal-list > button { width: 100%; min-height: 82px; padding: 11px 17px; border: 2px solid transparent; border-radius: 24px; background: var(--sand); display: flex; align-items: center; gap: 17px; color: var(--ink); text-align: left; font-size: 20px; cursor: pointer; }
 .goal-list > button.selected { border-color: #f566006e; background: var(--selected); }
-.goal-list > button .design-care-icon { width: 55px; height: 55px; min-width: 55px; flex: 0 0 55px; }
-.goal-list > button > span:not(.design-care-icon) { flex: 1; }
+.goal-list > button .design-care-icon, .goal-section-symbol { width: 55px; height: 55px; min-width: 55px; flex: 0 0 55px; }
+.goal-section-symbol { border-radius: 50%; background: var(--cream); color: var(--orange); display: grid; place-items: center; }
+.goal-section-symbol svg { width: 35px; height: 35px; fill: currentColor; stroke: none; }
+.goal-section-symbol svg .glyph-cut { fill: var(--cream); }
+.goal-section-symbol.hygiene { color: var(--blue); }
+.goal-section-symbol.weight { color: #78a25d; }
+.goal-list > button .goal-label { flex: 1; }
 .goal-list > button > svg { width: 22px; color: var(--orange); }
 .about-continue { margin-top: 42px; flex-shrink: 0; }
 
