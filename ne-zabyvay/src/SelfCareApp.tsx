@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, BarChart3, BedDouble, Bell, CalendarDays, Camera, Check, CheckCircle2,
-  ChevronLeft, ChevronRight, ClipboardList, Clock3, Delete, Download, Footprints,
+  ChevronLeft, ChevronRight, ClipboardList, Clock3, Delete, Download, Eye, EyeOff, Footprints,
   Hand, Home, LayoutGrid, LoaderCircle, LogOut, Minus, Moon,
   MoreVertical, NotebookPen, Pencil, Plus, Save, ScanLine, Share2,
   ShieldCheck, Shirt, ShowerHead, Smile, Smartphone, SquarePlus, Sun,
@@ -105,7 +105,20 @@ const API_URL = import.meta.env.VITE_API_URL || "https://script.google.com/macro
 const TOKEN_KEY = "ne-zabyvay-session";
 const THEME_KEY = "ne-zabyvay-theme";
 const INSTALL_GUIDE_KEY = "ne-zabyvay-install-guide-seen";
+const USER_CACHE_KEY = "ne-zabyvay-user-cache";
+const DATA_CACHE_KEY = "ne-zabyvay-data-cache";
 const asset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
+
+function readCache<T>(key: string): T | null {
+  try { return JSON.parse(localStorage.getItem(key) || "null") as T | null; }
+  catch { return null; }
+}
+
+function normalizeGoal(value?: string) {
+  if (value === "basic" || value === "hygiene" || value === "weight" || value === "all") return value;
+  if (value === "water" || value === "food" || value === "rest") return "basic";
+  return "all";
+}
 
 class ApiError extends Error {}
 
@@ -167,10 +180,16 @@ function SectionGlyph({ category }: { category: ReminderCategory }) {
   </svg>;
 }
 
+function BasicGlyph({ type }: { type: BasicReminderType | "heart" }) {
+  if (type === "water") return <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 5C25 17 15 29 15 41a17 17 0 0 0 34 0C49 29 39 17 32 5Z" /></svg>;
+  if (type === "food") return <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 32c8-14 26-19 39-8l9-8v32l-9-8C34 51 16 46 8 32Z" /><circle className="glyph-cut" cx="24" cy="29" r="3.5" /></svg>;
+  if (type === "rest") return <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M13 48a12 12 0 0 1 5-23 17 17 0 0 1 32 5 10 10 0 0 1-1 20H13v-2Z" /></svg>;
+  return <SectionGlyph category="basic" />;
+}
+
 function CareIcon({ type, className = "" }: { type: ReminderType | "heart"; className?: string }) {
   if (type === "heart" || isBasicType(type)) {
-    const source = type === "heart" ? asset("design-about.png") : asset("design-main.png");
-    return <span className={`design-care-icon ${type} ${className}`} aria-hidden="true"><img src={source} alt="" /></span>;
+    return <span className={`design-care-icon ${type} ${className}`} aria-hidden="true"><BasicGlyph type={type} /></span>;
   }
   return <span className={`habit-care-icon ${type} ${className}`} aria-hidden="true"><HabitGlyph type={type} /></span>;
 }
@@ -259,8 +278,8 @@ function ToggleSwitch({ checked, onChange, label, disabled = false }: { checked:
 }
 
 export function SelfCareApp() {
-  const [user, setUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  const [user, setUser] = useState<User | null>(() => localStorage.getItem(TOKEN_KEY) ? readCache<User>(USER_CACHE_KEY) : null);
+  const [authReady, setAuthReady] = useState(() => !localStorage.getItem(TOKEN_KEY) || Boolean(readCache<User>(USER_CACHE_KEY)));
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
@@ -277,20 +296,33 @@ export function SelfCareApp() {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) { setAuthReady(true); return; }
     backend({ action: "me", token }, 8000)
-      .then((payload) => { if (active) setUser((payload.user as User | undefined) || null); })
+      .then((payload) => {
+        const nextUser = (payload.user as User | undefined) || null;
+        if (nextUser) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(nextUser));
+        if (active) setUser(nextUser);
+      })
       .catch(() => {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_CACHE_KEY);
+        localStorage.removeItem(DATA_CACHE_KEY);
         if (active) setUser(null);
       })
       .finally(() => active && setAuthReady(true));
     return () => { active = false; };
   }, []);
 
+  const rememberUser = (nextUser: User) => {
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(nextUser));
+    setUser(nextUser);
+  };
+
   if (!authReady) return <main className="app-stage"><section className="phone-shell loading"><LoaderCircle className="spin" /><p>Подключаю аккаунт…</p></section></main>;
-  if (!user) return <Welcome onSignedIn={setUser} />;
+  if (!user) return <Welcome onSignedIn={rememberUser} />;
   return <SignedInApp user={user} theme={theme} setTheme={setTheme} onSignOut={async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_CACHE_KEY);
+    localStorage.removeItem(DATA_CACHE_KEY);
     setUser(null);
     if (token) backend({ action: "logout", token }).catch(() => undefined);
   }} />;
@@ -303,6 +335,8 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordRepeat, setShowPasswordRepeat] = useState(false);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -433,7 +467,7 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
           </label>
           {authMode === "login" && <label className="email-field password-field">
             <span className="sr-only">Пароль</span>
-            <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Пароль" onKeyDown={(event) => { if (event.key === "Enter") void signInWithPassword(); }} />
+            <span className="password-input-wrap"><input type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Пароль" onKeyDown={(event) => { if (event.key === "Enter") void signInWithPassword(); }} /><button type="button" aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"} aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff /> : <Eye />}</button></span>
           </label>}
           {authMode === "signup"
             ? <button className="primary-button" disabled={!/^\S+@\S+\.\S+$/.test(email) || busy} onClick={sendCode}>{busy ? "Отправляю…" : "Продолжить"}</button>
@@ -470,8 +504,8 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
             <h1>Придумай <span>пароль</span></h1>
             <p>Не меньше 8 символов. Он понадобится для быстрого входа.</p>
           </header>
-          <label className="email-field"><span className="sr-only">Новый пароль</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Новый пароль" /></label>
-          <label className="email-field password-repeat"><span className="sr-only">Повтори пароль</span><input type="password" autoComplete="new-password" value={passwordRepeat} onChange={(event) => setPasswordRepeat(event.target.value)} placeholder="Повтори пароль" onKeyDown={(event) => { if (event.key === "Enter") void savePassword(); }} /></label>
+          <label className="email-field"><span className="sr-only">Новый пароль</span><span className="password-input-wrap"><input type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Новый пароль" /><button type="button" aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"} aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff /> : <Eye />}</button></span></label>
+          <label className="email-field password-repeat"><span className="sr-only">Повтори пароль</span><span className="password-input-wrap"><input type={showPasswordRepeat ? "text" : "password"} autoComplete="new-password" value={passwordRepeat} onChange={(event) => setPasswordRepeat(event.target.value)} placeholder="Повтори пароль" onKeyDown={(event) => { if (event.key === "Enter") void savePassword(); }} /><button type="button" aria-label={showPasswordRepeat ? "Скрыть повтор пароля" : "Показать повтор пароля"} aria-pressed={showPasswordRepeat} onClick={() => setShowPasswordRepeat((value) => !value)}>{showPasswordRepeat ? <EyeOff /> : <Eye />}</button></span></label>
           <button className="primary-button" disabled={password.length < 8 || passwordRepeat.length < 8 || busy} onClick={savePassword}>{busy ? "Сохраняю…" : "Сохранить пароль"}</button>
           {message && <p className="auth-note">{message}</p>}
           <p className="password-hint">Если забудешь пароль, всегда можно войти по коду из письма.</p>
@@ -483,7 +517,10 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
 
 function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: Theme; setTheme: (theme: Theme) => void; onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("today");
-  const [data, setData] = useState<AppData | null>(null);
+  const [data, setData] = useState<AppData | null>(() => {
+    const cached = readCache<AppData>(DATA_CACHE_KEY);
+    return cached?.profile?.email === user.email ? normalizeData(cached) : null;
+  });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState(false);
@@ -500,6 +537,10 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
     navigator.serviceWorker?.register(asset("sw.js")).catch(() => undefined);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (data) localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
+  }, [data]);
 
   useEffect(() => {
     const rememberPrompt = (event: Event) => {
@@ -691,12 +732,12 @@ function RegistrationFinish({ data, saving, post }: {
   post: (body: Record<string, unknown>, success?: string) => Promise<void>;
 }) {
   const [name, setName] = useState(data.profile.displayName);
-  const [goal, setGoal] = useState(data.profile.goal || "all");
+  const [goal, setGoal] = useState(normalizeGoal(data.profile.goal));
 
-  const choices: Array<{ id: ReminderType | "all"; label: string }> = [
-    { id: "water", label: "Пить больше воды" },
-    { id: "food", label: "Регулярно кушать" },
-    { id: "rest", label: "Больше отдыхать" },
+  const choices: Array<{ id: ReminderCategory | "all"; label: string }> = [
+    { id: "basic", label: "Базовая забота" },
+    { id: "hygiene", label: "Гигиена" },
+    { id: "weight", label: "Физическое здоровье" },
     { id: "all", label: "Всё и сразу" },
   ];
 
@@ -705,7 +746,7 @@ function RegistrationFinish({ data, saving, post }: {
     <label className="about-name">Как к тебе обращаться?<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Твоё имя" maxLength={40} /></label>
     <h2>Твоя цель</h2>
     <div className="goal-list">{choices.map((choice) => <button key={choice.id} className={goal === choice.id ? "selected" : ""} onClick={() => setGoal(choice.id)}>
-      <CareIcon type={choice.id === "all" ? "heart" : choice.id} /><span>{choice.label}</span>{goal === choice.id && <Check />}
+      {choice.id === "all" ? <CareIcon type="heart" /> : <span className={`goal-section-symbol ${choice.id}`}><SectionGlyph category={choice.id} /></span>}<span className="goal-label">{choice.label}</span>{goal === choice.id && <Check />}
     </button>)}</div>
     <button className="primary-button about-continue" disabled={!name.trim() || saving} onClick={() => post({ action: "profile", displayName: name, goal, onboardingCompleted: true }, "Профиль готов")}>{saving ? "Сохраняю…" : "Продолжить"}</button>
   </section></main>;
@@ -717,7 +758,7 @@ function CareSectionsView({ data, setData }: { data: AppData; setData: React.Dis
   const sections: Array<{ id: ReminderCategory; title: string; text: string }> = [
     { id: "basic", title: "Базовая забота", text: "Вода, еда и отдых" },
     { id: "hygiene", title: "Гигиена", text: "Ежедневные и еженедельные дела" },
-    { id: "weight", title: "Снижение веса", text: "Прогулка, сон и упражнения" },
+    { id: "weight", title: "Физическое здоровье", text: "Прогулка, сон и упражнения" },
   ];
 
   if (section) {
@@ -1043,17 +1084,17 @@ function StatsView({ data }: { data: AppData }) {
     <section className="stat-hero"><CareIcon type="heart" /><strong>{checkins.length}</strong><span>{careWord(checkins.length)} о себе за 7 дней</span></section>
     <section className="chart-card"><h2>Неделя</h2><div className="bars">{days.map((day) => <div className="bar-column" key={day.label}><div className="bar-track"><div className="bar" style={{ height: `${Math.max(8, day.count / max * 100)}%` }}><span>{day.count || ""}</span></div></div><b>{day.label}</b></div>)}</div></section>
     <div className="stat-grid">{(["water", "food", "rest"] as BasicReminderType[]).map((type) => { const meta = META[type]; const count = checkins.filter((item) => item.type === type).length; return <article key={type}><CareIcon type={type} className="tiny-icon" /><strong>{count}</strong><span>{meta.title}</span></article>; })}</div>
-    <h2 className="stat-section-title">По разделам</h2><div className="category-stats"><article><span className="category-stat-icon basic"><SectionGlyph category="basic" /></span><span><strong>{categoryCount("basic")}</strong><small>Базовая забота</small></span></article><article><span className="category-stat-icon hygiene"><SectionGlyph category="hygiene" /></span><span><strong>{categoryCount("hygiene")}</strong><small>Гигиена</small></span></article><article><span className="category-stat-icon weight"><SectionGlyph category="weight" /></span><span><strong>{categoryCount("weight")}</strong><small>Снижение веса</small></span></article></div>
+    <h2 className="stat-section-title">По разделам</h2><div className="category-stats"><article><span className="category-stat-icon basic"><SectionGlyph category="basic" /></span><span><strong>{categoryCount("basic")}</strong><small>Базовая забота</small></span></article><article><span className="category-stat-icon hygiene"><SectionGlyph category="hygiene" /></span><span><strong>{categoryCount("hygiene")}</strong><small>Гигиена</small></span></article><article><span className="category-stat-icon weight"><SectionGlyph category="weight" /></span><span><strong>{categoryCount("weight")}</strong><small>Физическое здоровье</small></span></article></div>
   </div>;
 }
 
 function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpenInstall, onSignOut }: { data: AppData; setData: React.Dispatch<React.SetStateAction<AppData | null>>; user: User; saving: boolean; post: (body: Record<string, unknown>, success?: string, refresh?: boolean) => Promise<void>; theme: Theme; setTheme: (theme: Theme) => void; onOpenInstall: () => void; onSignOut: () => void }) {
   const [name, setName] = useState(data.profile.displayName);
-  const [goal, setGoal] = useState(data.profile.goal);
+  const [goal, setGoal] = useState(normalizeGoal(data.profile.goal));
   const [avatarId, setAvatarId] = useState<AvatarId>(avatarById(data.profile.avatarId).id);
   const [isEditing, setIsEditing] = useState(false);
   const [notificationNote, setNotificationNote] = useState("");
-  const goalLabel = goal === "water" ? "Пить больше воды" : goal === "food" ? "Регулярно кушать" : goal === "rest" ? "Больше отдыхать" : "Всё и сразу";
+  const goalLabel = goal === "basic" ? "Базовая забота" : goal === "hygiene" ? "Гигиена" : goal === "weight" ? "Физическое здоровье" : "Всё и сразу";
   const notificationStatus = typeof window !== "undefined" && "Notification" in window
     ? Notification.permission === "granted" ? "Включены · проверка при открытом приложении" : "Нажми, чтобы включить"
     : "Сначала добавь приложение на экран";
@@ -1080,7 +1121,7 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
   };
   const cancelEditing = () => {
     setName(data.profile.displayName);
-    setGoal(data.profile.goal);
+    setGoal(normalizeGoal(data.profile.goal));
     setAvatarId(avatarById(data.profile.avatarId).id);
     setIsEditing(false);
   };
@@ -1092,7 +1133,7 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
         <div className="avatar-grid">{AVATARS.map((avatar) => <button type="button" key={avatar.id} className={avatarId === avatar.id ? "selected" : ""} aria-label={avatar.label} aria-pressed={avatarId === avatar.id} onClick={() => chooseAvatar(avatar.id)}><PenguinAvatar avatarId={avatar.id} alt="" />{avatarId === avatar.id && <Check />}</button>)}</div>
       </section>
       <section className="settings-card"><label>Как к тебе обращаться?<input value={name} onChange={(event) => setName(event.target.value)} maxLength={40} /></label>
-        <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="water">Пить больше воды</option><option value="food">Регулярно кушать</option><option value="rest">Больше отдыхать</option></select></label>
+        <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="basic">Базовая забота</option><option value="hygiene">Гигиена</option><option value="weight">Физическое здоровье</option></select></label>
         <div className="profile-form-actions"><button type="button" className="secondary-button" disabled={saving} onClick={cancelEditing}>Отмена</button><button className="primary-button save-button" disabled={saving || !name.trim()} onClick={saveProfile}><Save /> Сохранить</button></div>
       </section>
     </>}
