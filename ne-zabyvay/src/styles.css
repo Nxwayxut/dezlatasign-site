@@ -102,10 +102,10 @@ h1, h2, h3, strong { font-weight: 700; }
 .design-care-icon.heart img { width: 958.5%; left: -129.3%; top: -1168.3%; }
 .design-care-icon.tiny-icon { width: 42px; height: 42px; min-width: 42px; margin: 0; }
 .habit-care-icon { width: 62px; height: 62px; min-width: 62px; border-radius: 50%; background: var(--cream); color: var(--orange); display: grid; place-items: center; box-shadow: 0 9px 14px #4d362616; }
-.habit-care-icon svg { width: 31px; height: 31px; fill: currentColor; stroke: none; }
+.habit-care-icon svg { width: 40px; height: 40px; fill: currentColor; stroke: none; }
 .habit-care-icon svg .glyph-cut { fill: var(--cream); }
 .habit-care-icon.tiny-icon { width: 42px; height: 42px; min-width: 42px; }
-.habit-care-icon.tiny-icon svg { width: 21px; height: 21px; }
+.habit-care-icon.tiny-icon svg { width: 28px; height: 28px; }
 .habit-care-icon.walk { color: #78a25d; }
 .habit-care-icon.exercise { color: var(--coral); }
 .design-penguin { width: 100%; position: relative; overflow: hidden; flex-shrink: 0; forced-color-adjust: none; }
@@ -150,9 +150,13 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .email-field input:focus, .about-name input:focus { border-color: var(--muted); box-shadow: 0 0 0 4px #f5660010; }
 .email-field + .primary-button { margin-top: 18px; }
 .password-field, .password-repeat { margin-top: 12px; }
+.email-screen .email-field:first-of-type { margin-top: 28px; }
 .auth-divider { height: 34px; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
 .auth-divider::before, .auth-divider::after { content: ""; height: 1px; flex: 1; background: var(--sand-2); }
-.auth-code-button { width: 100%; }
+.auth-code-button { width: 100%; min-height: 58px; border: 2px solid var(--orange); border-radius: 999px; background: transparent; color: var(--orange); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform .09s, background .09s; }
+.auth-code-button:active { transform: scale(.985); background: var(--selected); }
+.auth-code-button:disabled { opacity: .55; cursor: default; }
+.email-screen .auth-code-button { margin-bottom: 20px; }
 .password-screen { padding-top: 44px; }
 .password-hint { margin: 18px 12px 0; color: var(--muted); font-size: 13px; line-height: 1.4; text-align: center; }
 .confirm-screen { margin: 0; width: 100%; min-height: calc(100svh - 62px); }
@@ -234,7 +238,8 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .care-section-list em { margin-top: 9px; color: var(--orange); font-size: 12px; font-style: normal; font-weight: 700; }
 .care-section-list > button > svg { width: 20px; color: var(--muted); }
 .section-symbol { width: 60px; height: 60px; min-width: 60px; border-radius: 20px; background: var(--cream); color: var(--orange); display: grid; place-items: center; }
-.section-symbol svg { width: 29px; height: 29px; stroke-width: 2; }
+.section-symbol svg { width: 38px; height: 38px; fill: currentColor; stroke: none; }
+.section-symbol svg .glyph-cut, .category-stat-icon svg .glyph-cut { fill: var(--cream); }
 .section-symbol.hygiene { color: var(--blue); }
 .section-symbol.weight { color: #78a25d; }
 .care-penguin-note { min-height: 96px; margin-top: 20px; padding: 12px 17px 12px 105px; border-radius: 24px; background: var(--selected); position: relative; display: flex; align-items: center; overflow: hidden; }
@@ -254,7 +259,7 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .habit-setup-card:not(.enabled) { opacity: .75; }
 .habit-setup-top { display: flex; align-items: center; gap: 12px; }
 .habit-setup-top > .design-care-icon, .habit-setup-top > .habit-care-icon { width: 50px; height: 50px; min-width: 50px; box-shadow: none; }
-.habit-setup-top > .habit-care-icon svg { width: 24px; height: 24px; }
+.habit-setup-top > .habit-care-icon svg { width: 32px; height: 32px; }
 .habit-setup-top > div { min-width: 0; flex: 1; }
 .habit-setup-top h3 { margin: 0 0 3px; font-size: 17px; line-height: 1.15; }
 .habit-setup-top p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.25; }
@@ -441,9 +446,10 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .stat-section-title { margin: 24px 0 11px; font-size: 20px; }
 .category-stats { display: grid; gap: 8px; }
 .category-stats article { min-height: 64px; padding: 11px 15px; border-radius: 19px; background: var(--sand); display: flex; align-items: center; gap: 12px; }
-.category-stats article > svg { width: 24px; color: var(--orange); }
-.category-stats article:nth-child(2) > svg { color: var(--blue); }
-.category-stats article:nth-child(3) > svg { color: #78a25d; }
+.category-stat-icon { width: 34px; height: 34px; min-width: 34px; color: var(--orange); display: grid; place-items: center; }
+.category-stat-icon svg { width: 32px; height: 32px; fill: currentColor; stroke: none; }
+.category-stat-icon.hygiene { color: var(--blue); }
+.category-stat-icon.weight { color: #78a25d; }
 .category-stats strong, .category-stats small { display: block; }
 .category-stats strong { font-size: 20px; }
 .category-stats small { color: var(--muted); font-size: 12px; }
