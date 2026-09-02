@@ -179,7 +179,7 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .password-field, .password-repeat { margin-top: 12px; }
 .password-input-wrap { display: block; position: relative; }
 .password-input-wrap input { padding-right: 60px; }
-.password-input-wrap button { position: absolute; top: 50%; right: 10px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.password-input-wrap button { position: absolute; top: 50%; right: 10px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; transform: translateY(-50%); cursor: pointer; }
 .password-input-wrap button:active { background: var(--soft-active); }
 .password-input-wrap button svg { width: 23px; height: 23px; stroke-width: 2; }
 .email-screen .email-field:first-of-type { margin-top: 28px; }
