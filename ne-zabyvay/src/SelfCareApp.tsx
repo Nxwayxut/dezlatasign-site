@@ -563,8 +563,8 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
         navigator.serviceWorker.ready.then((registration) => registration.showNotification(reminderInfo(item).title, {
           body: reminderInfo(item).text,
           tag: key,
-          icon: asset("favicon.svg"),
-          badge: asset("favicon.svg"),
+          icon: asset("app-icon-192.png"),
+          badge: asset("app-icon-192.png"),
         })).catch(() => undefined);
         localStorage.setItem(storageKey, "sent");
       });
@@ -1105,7 +1105,7 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
       const permission = await Notification.requestPermission();
       if (permission !== "granted") { setNotificationNote("Разрешение не выдано в настройках браузера"); return; }
       const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification("Уведомления работают", { body: "Это проверочное сообщение от «Не забывай»", tag: "notification-test", icon: asset("favicon.svg"), badge: asset("favicon.svg") });
+      await registration.showNotification("Уведомления работают", { body: "Это проверочное сообщение от «Не забывай»", tag: "notification-test", icon: asset("app-icon-192.png"), badge: asset("app-icon-192.png") });
       await post({ action: "profile", displayName: name, goal, avatarId, notificationsEnabled: true }, "Проверочное уведомление отправлено", false);
       setData((current) => current ? { ...current, profile: { ...current.profile, notificationsEnabled: true } } : current);
       setNotificationNote("Проверочное уведомление отправлено");
