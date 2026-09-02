@@ -540,6 +540,34 @@ html[data-theme="dark"] .design-penguin-email .penguin-transparent { display: bl
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/*
+ * Illustrated care icons are spans, while several cards intentionally make
+ * their text spans block elements. Keep the icon itself a centering grid no
+ * matter where it is rendered (welcome, history, statistics, or reminders).
+ */
+span.design-care-icon,
+span.habit-care-icon,
+span.section-symbol,
+span.goal-section-symbol,
+span.category-stat-icon {
+  display: grid !important;
+  place-items: center;
+  align-content: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+span.design-care-icon > svg,
+span.habit-care-icon > svg,
+span.section-symbol > svg,
+span.goal-section-symbol > svg,
+span.category-stat-icon > svg {
+  position: static;
+  display: block;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
 .legal-page { width: min(100%, 760px); min-height: 100svh; margin: auto; padding: 48px 24px; background: var(--cream); }
 .legal-page a { color: var(--orange); }
 .legal-page h1 { font-size: clamp(36px, 7vw, 56px); letter-spacing: -2px; line-height: 1; }
