@@ -108,6 +108,33 @@ h1, h2, h3, strong { font-weight: 700; }
 .habit-care-icon.tiny-icon svg { width: 28px; height: 28px; }
 .habit-care-icon.walk { color: #78a25d; }
 .habit-care-icon.exercise { color: var(--coral); }
+
+/* Keep every illustrated icon centered even inside cards that style all spans. */
+span.design-care-icon,
+span.habit-care-icon,
+span.section-symbol,
+span.goal-section-symbol,
+span.category-stat-icon,
+span.tiny-icon {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+}
+span.design-care-icon > svg,
+span.habit-care-icon > svg,
+span.section-symbol > svg,
+span.goal-section-symbol > svg,
+span.category-stat-icon > svg,
+span.tiny-icon > svg {
+  position: static;
+  display: block;
+  margin: 0;
+  flex: 0 0 auto;
+}
 .design-penguin { width: 100%; position: relative; overflow: hidden; flex-shrink: 0; forced-color-adjust: none; }
 .design-penguin img { position: absolute; height: auto; max-width: none; forced-color-adjust: none; }
 .design-penguin .penguin-transparent { display: none; }
