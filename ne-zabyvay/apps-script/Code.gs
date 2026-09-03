@@ -6,10 +6,11 @@ const OTP_DAILY_LIMIT = 10;
 const PASSWORD_ROUNDS = 2500;
 const PASSWORD_MAX_ATTEMPTS = 5;
 const PASSWORD_LOCK_MINUTES = 15;
-const DB_SCHEMA_VERSION = "2026-08-auth-reminders-v3";
+const DB_SCHEMA_VERSION = "2026-09-care-reminders-v4";
 
 let DB_CACHE_ = null;
 const SHEET_CACHE_ = {};
+let ROW_CACHE_ = {};
 
 const TABLES = {
   Profiles: ["email", "displayName", "goal", "notificationsEnabled", "onboardingCompleted", "createdAt", "updatedAt", "avatarId", "passwordHash", "passwordSalt", "passwordFailedAttempts", "passwordLockedUntil", "passwordUpdatedAt"],
@@ -17,9 +18,6 @@ const TABLES = {
   Checkins: ["id", "ownerEmail", "type", "completedAt"],
   Sessions: ["tokenHash", "email", "expiresAt", "createdAt"],
   Otps: ["email", "codeHash", "attempts", "expiresAt", "resendAfter", "sentDate", "sentCount", "createdAt", "mode"],
-  WeightSettings: ["ownerEmail", "enabled", "mode", "goalKg", "calorieMode", "updatedAt"],
-  WeightEntries: ["id", "ownerEmail", "weightKg", "recordedAt"],
-  FoodEntries: ["id", "ownerEmail", "mealType", "title", "calories", "hunger", "fullness", "reason", "recordedAt"],
 };
 
 const DEFAULT_REMINDERS = [
@@ -31,7 +29,7 @@ const DEFAULT_REMINDERS = [
   { type: "hands", category: "hygiene", title: "Помыть руки", description: "После улицы и перед едой", times: ["13:00", "19:00"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
   { type: "face", category: "hygiene", title: "Умыться", description: "Мягкий уход утром и вечером", times: ["08:10", "22:10"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
   { type: "floss", category: "hygiene", title: "Зубная нить", description: "Небольшой вечерний ритуал", times: ["21:50"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
-  { type: "clothes", category: "hygiene", title: "Сменить бельё", description: "Чистая одежда на каждый день", times: ["08:20"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
+  { type: "clothes", category: "hygiene", title: "Сменить нижнее бельё", description: "Чистая одежда на каждый день", times: ["08:20"], days: [0, 1, 2, 3, 4, 5, 6], enabled: false },
   { type: "towel", category: "hygiene", title: "Сменить полотенце", description: "Еженедельное напоминание", times: ["11:00"], days: [6], enabled: false },
   { type: "linen", category: "hygiene", title: "Сменить постельное бельё", description: "Выбери удобный день недели", times: ["11:30"], days: [0], enabled: false },
   { type: "nails", category: "hygiene", title: "Уход за ногтями", description: "Без строгого расписания", times: ["18:00"], days: [0], enabled: false },
@@ -53,6 +51,7 @@ function doGet() {
 
 function doPost(e) {
   try {
+    ROW_CACHE_ = {};
     const body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
     const action = String(body.action || "");
     if (action === "startOtp") return json_(startOtp_(body));
@@ -71,11 +70,6 @@ function doPost(e) {
     if (action === "deleteCheckin") return json_(deleteCheckin_(email, body));
     if (action === "deleteCheckins") return json_(deleteCheckins_(email, body));
     if (action === "profile") return json_(updateProfile_(email, body));
-    if (action === "weightSettings") return json_(updateWeightSettings_(email, body));
-    if (action === "addWeight") return json_(addWeightEntry_(email, body));
-    if (action === "deleteWeight") return json_(deleteOwnedRow_("WeightEntries", email, body.id));
-    if (action === "addFood") return json_(addFoodEntry_(email, body));
-    if (action === "deleteFood") return json_(deleteOwnedRow_("FoodEntries", email, body.id));
     return json_({ ok: false, error: "Неизвестная команда" });
   } catch (error) {
     const message = error && error.message ? error.message : "Не удалось выполнить запрос";
@@ -202,12 +196,14 @@ function setPassword_(email, body) {
 
 function createSession_(email) {
   const token = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
+  const tokenHash = hash_(token);
   append_("Sessions", {
-    tokenHash: hash_(token),
+    tokenHash: tokenHash,
     email: email,
     expiresAt: Date.now() + SESSION_DAYS * 86400000,
     createdAt: new Date().toISOString(),
   });
+  CacheService.getScriptCache().put("session-" + tokenHash, email, 21600);
   return token;
 }
 
@@ -218,7 +214,11 @@ function me_(body) {
 
 function logout_(body) {
   const token = String(body.token || "");
-  if (token) deleteBy_("Sessions", "tokenHash", hash_(token));
+  if (token) {
+    const tokenHash = hash_(token);
+    CacheService.getScriptCache().remove("session-" + tokenHash);
+    deleteBy_("Sessions", "tokenHash", tokenHash);
+  }
   return { ok: true };
 }
 
@@ -234,24 +234,15 @@ function getData_(email) {
       days: safeJson_(row.daysJson, [0, 1, 2, 3, 4, 5, 6]), enabled: asBool_(row.enabled),
     };
   });
-  const weekAgo = Date.now() - 7 * 86400000;
+  const weekAgo = Date.now() - 8 * 86400000;
   const checkins = rows_("Checkins").filter(function (row) {
     return row.ownerEmail === email && new Date(row.completedAt).getTime() >= weekAgo;
-  }).sort(function (a, b) { return String(b.completedAt).localeCompare(String(a.completedAt)); }).slice(0, 100);
-  const settingsRow = findBy_("WeightSettings", "ownerEmail", email);
-  const weightEntries = rows_("WeightEntries").filter(function (row) { return row.ownerEmail === email; })
-    .sort(function (a, b) { return String(b.recordedAt).localeCompare(String(a.recordedAt)); }).slice(0, 120);
-  const foodEntries = rows_("FoodEntries").filter(function (row) {
-    return row.ownerEmail === email && new Date(row.recordedAt).getTime() >= Date.now() - 14 * 86400000;
-  }).sort(function (a, b) { return String(b.recordedAt).localeCompare(String(a.recordedAt)); }).slice(0, 200);
+  }).sort(function (a, b) { return String(b.completedAt).localeCompare(String(a.completedAt)); }).slice(0, 500);
   return {
     ok: true,
     profile: normalizeProfile_(profile),
     reminders: reminders,
     checkins: checkins.map(function (row) { return { id: row.id, type: row.type, completedAt: row.completedAt }; }),
-    weightSettings: settingsRow ? { enabled: asBool_(settingsRow.enabled), mode: settingsRow.mode === "maintain" ? "maintain" : "lose", goalKg: numberOrNull_(settingsRow.goalKg), calorieMode: asBool_(settingsRow.calorieMode) } : { enabled: false, mode: "lose", goalKg: null, calorieMode: false },
-    weightEntries: weightEntries.map(function (row) { return { id: row.id, weightKg: Number(row.weightKg), recordedAt: row.recordedAt }; }),
-    foodEntries: foodEntries.map(function (row) { return { id: row.id, mealType: row.mealType, title: row.title, calories: numberOrNull_(row.calories), hunger: numberOrNull_(row.hunger), fullness: numberOrNull_(row.fullness), reason: row.reason || "", recordedAt: row.recordedAt }; }),
   };
 }
 
@@ -301,46 +292,11 @@ function addCheckin_(email, body) {
   return { ok: true, id: id };
 }
 
-function updateWeightSettings_(email, body) {
-  const rawGoal = body.goalKg === null || body.goalKg === "" ? null : Number(body.goalKg);
-  if (rawGoal !== null && (!isFinite(rawGoal) || rawGoal < 25 || rawGoal > 400)) throw new Error("Проверь желаемый вес");
-  const row = { ownerEmail: email, enabled: body.enabled === true, mode: body.mode === "maintain" ? "maintain" : "lose", goalKg: rawGoal === null ? "" : Math.round(rawGoal * 10) / 10, calorieMode: body.calorieMode === true, updatedAt: new Date().toISOString() };
-  upsert_("WeightSettings", "ownerEmail", email, row);
-  return { ok: true };
-}
-
-function addWeightEntry_(email, body) {
-  const weightKg = Number(body.weightKg);
-  if (!isFinite(weightKg) || weightKg < 25 || weightKg > 400) throw new Error("Проверь значение веса");
-  const entry = { id: Utilities.getUuid(), ownerEmail: email, weightKg: Math.round(weightKg * 10) / 10, recordedAt: new Date().toISOString() };
-  append_("WeightEntries", entry);
-  return { ok: true, entry: { id: entry.id, weightKg: entry.weightKg, recordedAt: entry.recordedAt } };
-}
-
-function addFoodEntry_(email, body) {
-  const title = String(body.title || "").trim().slice(0, 80);
-  if (!title) throw new Error("Напиши, что было в приёме пищи");
-  const calories = optionalNumber_(body.calories, 0, 10000);
-  const hunger = optionalNumber_(body.hunger, 1, 5);
-  const fullness = optionalNumber_(body.fullness, 1, 5);
-  const reason = ["hunger", "schedule", "pleasure", "stress", "boredom", "other"].indexOf(String(body.reason)) >= 0 ? String(body.reason) : "";
-  const mealType = ["breakfast", "lunch", "dinner", "snack"].indexOf(String(body.mealType)) >= 0 ? String(body.mealType) : "meal";
-  const entry = { id: Utilities.getUuid(), ownerEmail: email, mealType: mealType, title: title, calories: calories === null ? "" : Math.round(calories), hunger: hunger === null ? "" : hunger, fullness: fullness === null ? "" : fullness, reason: reason, recordedAt: new Date().toISOString() };
-  append_("FoodEntries", entry);
-  return { ok: true, entry: { id: entry.id, mealType: entry.mealType, title: entry.title, calories: calories, hunger: hunger, fullness: fullness, reason: reason, recordedAt: entry.recordedAt } };
-}
-
-function deleteOwnedRow_(table, email, id) {
-  const row = findBy_(table, "id", String(id || ""));
-  if (!row || row.ownerEmail !== email) throw new Error("Запись не найдена");
-  sheet_(table).deleteRow(row._row);
-  return { ok: true };
-}
-
 function deleteCheckin_(email, body) {
   const row = findBy_("Checkins", "id", String(body.id || ""));
   if (!row || row.ownerEmail !== email) throw new Error("Отметка не найдена");
   sheet_("Checkins").deleteRow(row._row);
+  delete ROW_CACHE_.Checkins;
   return { ok: true };
 }
 
@@ -352,12 +308,14 @@ function deleteCheckins_(email, body) {
   }).sort(function (a, b) { return b._row - a._row; });
   const sheet = sheet_("Checkins");
   matches.forEach(function (row) { sheet.deleteRow(row._row); });
+  delete ROW_CACHE_.Checkins;
   return { ok: true, deleted: matches.length };
 }
 
 function updateProfile_(email, body) {
   const displayName = String(body.displayName || "").trim().slice(0, 40);
-  const goal = ["water", "food", "rest", "all"].indexOf(String(body.goal || "all")) >= 0 ? String(body.goal || "all") : "all";
+  const requestedGoal = String(body.goal || "all");
+  const goal = ["basic", "hygiene", "weight", "all"].indexOf(requestedGoal) >= 0 ? requestedGoal : "all";
   const current = findBy_("Profiles", "email", email);
   const requestedAvatar = String(body.avatarId || (current && current.avatarId) || "classic");
   const avatarId = ["classic", "dusty-red", "dreamcicle", "dandelion", "spring-green", "blue-lagoon", "plum-purple", "raspberry", "candy-floss", "blue-hawaii"].indexOf(requestedAvatar) >= 0 ? requestedAvatar : "classic";
@@ -366,7 +324,32 @@ function updateProfile_(email, body) {
   if (body.onboardingCompleted === true) update.onboardingCompleted = true;
   if (body.notificationsEnabled === true) update.notificationsEnabled = true;
   updateBy_("Profiles", "email", email, update);
+  if (body.onboardingCompleted === true) applyOnboardingGoal_(email, goal);
   return { ok: true };
+}
+
+function applyOnboardingGoal_(email, goal) {
+  const starterTypes = {
+    basic: ["water", "food", "rest"],
+    hygiene: ["teeth", "shower", "face"],
+    weight: ["walk", "sleep"],
+    all: ["water", "food", "rest", "teeth", "shower", "face", "walk", "sleep"],
+  };
+  const enabledTypes = starterTypes[goal] || starterTypes.all;
+  const enabledColumn = TABLES.Reminders.indexOf("enabled") + 1;
+  const updatedColumn = TABLES.Reminders.indexOf("updatedAt") + 1;
+  const now = new Date().toISOString();
+  const reminderSheet = sheet_("Reminders");
+  const userRows = rows_("Reminders").filter(function (row) { return row.ownerEmail === email; });
+  const enabledCells = userRows.filter(function (row) { return enabledTypes.indexOf(String(row.type)) >= 0; })
+    .map(function (row) { return reminderSheet.getRange(row._row, enabledColumn).getA1Notation(); });
+  const disabledCells = userRows.filter(function (row) { return enabledTypes.indexOf(String(row.type)) < 0; })
+    .map(function (row) { return reminderSheet.getRange(row._row, enabledColumn).getA1Notation(); });
+  const updatedCells = userRows.map(function (row) { return reminderSheet.getRange(row._row, updatedColumn).getA1Notation(); });
+  if (enabledCells.length) reminderSheet.getRangeList(enabledCells).setValue(true);
+  if (disabledCells.length) reminderSheet.getRangeList(disabledCells).setValue(false);
+  if (updatedCells.length) reminderSheet.getRangeList(updatedCells).setValue(now);
+  delete ROW_CACHE_.Reminders;
 }
 
 function ensureUser_(email) {
@@ -409,8 +392,14 @@ function reminderTemplate_(type) {
 function requireUser_(token) {
   const value = String(token || "");
   if (!value) throw new Error("Нужно войти");
-  const session = findBy_("Sessions", "tokenHash", hash_(value));
+  const tokenHash = hash_(value);
+  const cache = CacheService.getScriptCache();
+  const cachedEmail = cache.get("session-" + tokenHash);
+  if (cachedEmail) return cachedEmail;
+  const session = findBy_("Sessions", "tokenHash", tokenHash);
   if (!session || Number(session.expiresAt) < Date.now()) throw new Error("Сессия закончилась. Войди снова");
+  const cacheSeconds = Math.max(1, Math.min(21600, Math.floor((Number(session.expiresAt) - Date.now()) / 1000)));
+  cache.put("session-" + tokenHash, String(session.email), cacheSeconds);
   return session.email;
 }
 
@@ -540,15 +529,20 @@ function sheet_(name) {
 }
 
 function rows_(name) {
+  if (ROW_CACHE_[name]) return ROW_CACHE_[name];
   const sheet = sheet_(name);
   const values = sheet.getDataRange().getValues();
-  if (values.length < 2) return [];
+  if (values.length < 2) {
+    ROW_CACHE_[name] = [];
+    return ROW_CACHE_[name];
+  }
   const headers = values[0];
-  return values.slice(1).filter(function (row) { return row.some(function (cell) { return cell !== ""; }); }).map(function (row, index) {
+  ROW_CACHE_[name] = values.slice(1).filter(function (row) { return row.some(function (cell) { return cell !== ""; }); }).map(function (row, index) {
     const object = { _row: index + 2 };
     headers.forEach(function (header, cell) { object[header] = row[cell]; });
     return object;
   });
+  return ROW_CACHE_[name];
 }
 
 function findBy_(name, key, value) {
@@ -558,6 +552,7 @@ function findBy_(name, key, value) {
 function append_(name, object) {
   const headers = TABLES[name];
   sheet_(name).appendRow(headers.map(function (key) { return object[key] === undefined ? "" : object[key]; }));
+  delete ROW_CACHE_[name];
 }
 
 function upsert_(name, key, value, object) {
@@ -569,20 +564,24 @@ function updateBy_(name, key, value, updates) {
   const row = findBy_(name, key, value);
   if (!row) throw new Error("Запись не найдена");
   const headers = TABLES[name];
-  headers.forEach(function (header, index) {
-    if (updates[header] !== undefined) sheet_(name).getRange(row._row, index + 1).setValue(updates[header]);
-  });
+  const range = sheet_(name).getRange(row._row, 1, 1, headers.length);
+  const values = range.getValues()[0];
+  headers.forEach(function (header, index) { if (updates[header] !== undefined) values[index] = updates[header]; });
+  range.setValues([values]);
+  delete ROW_CACHE_[name];
 }
 
 function deleteBy_(name, key, value) {
   const sheet = sheet_(name);
   const matches = rows_(name).filter(function (row) { return String(row[key]) === String(value); }).sort(function (a, b) { return b._row - a._row; });
   matches.forEach(function (row) { sheet.deleteRow(row._row); });
+  delete ROW_CACHE_[name];
 }
 
 function cleanupSessions_() {
   const sheet = sheet_("Sessions");
   rows_("Sessions").filter(function (row) { return Number(row.expiresAt) < Date.now(); }).sort(function (a, b) { return b._row - a._row; }).forEach(function (row) { sheet.deleteRow(row._row); });
+  delete ROW_CACHE_.Sessions;
 }
 
 function hash_(value) {
@@ -619,19 +618,6 @@ function safeJson_(value, fallback) {
 
 function asBool_(value) {
   return value === true || String(value).toLowerCase() === "true" || Number(value) === 1;
-}
-
-function numberOrNull_(value) {
-  if (value === "" || value === null || value === undefined) return null;
-  const number = Number(value);
-  return isFinite(number) ? number : null;
-}
-
-function optionalNumber_(value, min, max) {
-  if (value === "" || value === null || value === undefined) return null;
-  const number = Number(value);
-  if (!isFinite(number) || number < min || number > max) throw new Error("Проверь числовое значение");
-  return number;
 }
 
 function json_(payload) {
