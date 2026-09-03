@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft, BarChart3, BedDouble, Bell, CalendarDays, Camera, Check, CheckCircle2,
-  ChevronLeft, ChevronRight, ClipboardList, Clock3, Delete, Download, Eye, EyeOff, Footprints,
-  Hand, Home, LayoutGrid, LoaderCircle, LogOut, Minus, Moon,
-  MoreVertical, NotebookPen, Pencil, Plus, Save, ScanLine, Share2,
-  ShieldCheck, Shirt, ShowerHead, Smile, Smartphone, SquarePlus, Sun,
+  ArrowLeft, BarChart3, Bell, Check, CheckCircle2,
+  ChevronLeft, ChevronRight, Clock3, Delete, Download, Eye, EyeOff,
+  Home, LayoutGrid, LoaderCircle, LogOut, Moon,
+  MoreVertical, Pencil, Plus, Save, Share2,
+  ShieldCheck, Smartphone, SquarePlus, Sun,
   Trash2, Undo2, UserRound, X,
 } from "lucide-react";
 
@@ -17,10 +17,7 @@ type ReminderCategory = "basic" | "hygiene" | "weight";
 type Reminder = { id: string; type: ReminderType; category: ReminderCategory; title: string; description: string; times: string[]; days: number[]; enabled: boolean };
 type Checkin = { id: string; type: ReminderType; completedAt: string };
 type Profile = { email: string; displayName: string; goal: string; notificationsEnabled: boolean; onboardingCompleted: boolean; avatarId: AvatarId };
-type WeightSettings = { enabled: boolean; mode: "lose" | "maintain"; goalKg: number | null; calorieMode: boolean };
-type WeightEntry = { id: string; weightKg: number; recordedAt: string };
-type FoodEntry = { id: string; mealType: string; title: string; calories: number | null; hunger: number | null; fullness: number | null; reason: string; recordedAt: string };
-type AppData = { profile: Profile; reminders: Reminder[]; checkins: Checkin[]; weightSettings: WeightSettings; weightEntries: WeightEntry[]; foodEntries: FoodEntry[] };
+type AppData = { profile: Profile; reminders: Reminder[]; checkins: Checkin[] };
 type Tab = "today" | "care" | "history" | "stats" | "profile";
 type Theme = "light" | "dark";
 type AuthMode = "signup" | "login";
@@ -55,12 +52,6 @@ const META: Record<BasicReminderType, { title: string; text: string; color: stri
   rest: { title: "Отдых", text: "Напомню немного выдохнуть", color: "yellow" },
 } as const;
 
-const HEALTHY_TIMES: Record<BasicReminderType, string[]> = {
-  water: ["09:00", "12:00", "15:00", "18:00", "21:00"],
-  food: ["09:00", "14:00", "19:00"],
-  rest: ["13:00", "17:00"],
-};
-
 const REMINDER_COPY: Record<ReminderType, { title: string; text: string; category: ReminderCategory }> = {
   water: { title: "Вода", text: "Не забыть сделать пару глотков", category: "basic" },
   food: { title: "Еда", text: "Спокойно и регулярно покушать", category: "basic" },
@@ -70,7 +61,7 @@ const REMINDER_COPY: Record<ReminderType, { title: string; text: string; categor
   hands: { title: "Помыть руки", text: "После улицы и перед едой", category: "hygiene" },
   face: { title: "Умыться", text: "Мягкий уход утром и вечером", category: "hygiene" },
   floss: { title: "Зубная нить", text: "Небольшой вечерний ритуал", category: "hygiene" },
-  clothes: { title: "Сменить бельё", text: "Чистая одежда на каждый день", category: "hygiene" },
+  clothes: { title: "Сменить нижнее бельё", text: "Чистая одежда на каждый день", category: "hygiene" },
   towel: { title: "Сменить полотенце", text: "Еженедельное напоминание", category: "hygiene" },
   linen: { title: "Сменить постельное бельё", text: "Выбери удобный день недели", category: "hygiene" },
   nails: { title: "Уход за ногтями", text: "Без строгого расписания", category: "hygiene" },
@@ -118,6 +109,14 @@ function normalizeGoal(value?: string) {
   if (value === "basic" || value === "hygiene" || value === "weight" || value === "all") return value;
   if (value === "water" || value === "food" || value === "rest") return "basic";
   return "all";
+}
+
+function localDateKey(value: Date | string | number = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 class ApiError extends Error {}
@@ -267,9 +266,6 @@ function normalizeData(payload: AppData): AppData {
       days: item.days?.length ? item.days : [0, 1, 2, 3, 4, 5, 6],
     })),
     checkins: payload.checkins || [],
-    weightSettings: payload.weightSettings ? { ...payload.weightSettings, mode: payload.weightSettings.mode || "lose" } : { enabled: false, mode: "lose", goalKg: null, calorieMode: false },
-    weightEntries: payload.weightEntries || [],
-    foodEntries: payload.foodEntries || [],
   };
 }
 
@@ -301,11 +297,15 @@ export function SelfCareApp() {
         if (nextUser) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(nextUser));
         if (active) setUser(nextUser);
       })
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_CACHE_KEY);
-        localStorage.removeItem(DATA_CACHE_KEY);
-        if (active) setUser(null);
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : "";
+        const sessionEnded = message.includes("Сессия закончилась") || message.includes("Нужно войти");
+        if (sessionEnded) {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_CACHE_KEY);
+          localStorage.removeItem(DATA_CACHE_KEY);
+          if (active) setUser(null);
+        }
       })
       .finally(() => active && setAuthReady(true));
     return () => { active = false; };
@@ -347,6 +347,22 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
   }, [seconds]);
+
+  const goBack = () => {
+    setMessage("");
+    setOtp("");
+    if (step === "account") { setStep("welcome"); return; }
+    if (step === "confirm") { setStep("email"); return; }
+    if (step === "password") {
+      const token = localStorage.getItem(TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      setPendingUser(null);
+      setStep("email");
+      if (token) void backend({ action: "logout", token }).catch(() => undefined);
+      return;
+    }
+    setStep(authMode === "signup" ? "account" : "welcome");
+  };
 
   const sendCode = async () => {
     setBusy(true); setMessage("");
@@ -413,7 +429,6 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
     setOtp((value) => {
       if (value.length >= 4) return value;
       const next = `${value}${key}`;
-      if (next.length === 4) window.setTimeout(() => verifyCode(next), 120);
       return next;
     });
   };
@@ -441,6 +456,7 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
         </>}
 
         {step === "account" && <>
+          <button type="button" className="icon-back auth-back" onClick={goBack} aria-label="Назад"><ArrowLeft /></button>
           <DesignPenguin variant="account" />
           <header className="account-copy">
             <h1>Создаём твой <span>аккаунт</span></h1>
@@ -452,6 +468,7 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
         </>}
 
         {step === "email" && <div className="auth-screen email-screen">
+          <button type="button" className="icon-back auth-back" onClick={goBack} aria-label="Назад"><ArrowLeft /></button>
           <header className="auth-screen-copy">
             {authMode === "signup" ? <>
               <h1>Введи свою <span>почту</span></h1>
@@ -481,6 +498,7 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
         </div>}
 
         {step === "confirm" && <div className="auth-screen confirm-screen">
+          <button type="button" className="icon-back auth-back" onClick={goBack} aria-label="Назад"><ArrowLeft /></button>
           <header className="auth-screen-copy">
             <h1><span>Почти</span> готово!</h1>
             <p>Я отправил <strong>код</strong><br />на {email}</p>
@@ -488,6 +506,7 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
           <div className="otp-preview" aria-label="Четырёхзначный код">
             {[0, 1, 2, 3].map((index) => <span className={otp[index] ? "filled" : ""} key={index}>{otp[index] || ""}</span>)}
           </div>
+          <button type="button" className="primary-button confirm-code-button" disabled={otp.length !== 4 || busy} onClick={() => void verifyCode()}>{busy ? "Проверяю…" : "Подтвердить"}</button>
           <div className="resend-row">Отправить код повторно <button disabled={seconds > 0 || busy} onClick={sendCode}>{seconds > 0 ? `00:${String(seconds).padStart(2, "0")}` : "сейчас"}</button></div>
           {message && <p className="auth-note">{message}</p>}
           <div className="number-keypad" aria-label="Цифровая клавиатура">
@@ -500,13 +519,15 @@ function Welcome({ onSignedIn }: { onSignedIn: (user: User) => void }) {
         </div>}
 
         {step === "password" && <div className="auth-screen password-screen">
+          <button type="button" className="icon-back auth-back" onClick={goBack} aria-label="Назад"><ArrowLeft /></button>
           <header className="auth-screen-copy">
             <h1>Придумай <span>пароль</span></h1>
             <p>Не меньше 8 символов. Он понадобится для быстрого входа.</p>
           </header>
           <label className="email-field"><span className="sr-only">Новый пароль</span><span className="password-input-wrap"><input type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Новый пароль" /><button type="button" aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"} aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff /> : <Eye />}</button></span></label>
           <label className="email-field password-repeat"><span className="sr-only">Повтори пароль</span><span className="password-input-wrap"><input type={showPasswordRepeat ? "text" : "password"} autoComplete="new-password" value={passwordRepeat} onChange={(event) => setPasswordRepeat(event.target.value)} placeholder="Повтори пароль" onKeyDown={(event) => { if (event.key === "Enter") void savePassword(); }} /><button type="button" aria-label={showPasswordRepeat ? "Скрыть повтор пароля" : "Показать повтор пароля"} aria-pressed={showPasswordRepeat} onClick={() => setShowPasswordRepeat((value) => !value)}>{showPasswordRepeat ? <EyeOff /> : <Eye />}</button></span></label>
-          <button className="primary-button" disabled={password.length < 8 || passwordRepeat.length < 8 || busy} onClick={savePassword}>{busy ? "Сохраняю…" : "Сохранить пароль"}</button>
+          {passwordRepeat.length >= 8 && password !== passwordRepeat && <p className="password-match-error">Пароли не совпадают</p>}
+          <button className="primary-button" disabled={password.length < 8 || passwordRepeat.length < 8 || password !== passwordRepeat || busy} onClick={savePassword}>{busy ? "Сохраняю…" : "Сохранить пароль"}</button>
           {message && <p className="auth-note">{message}</p>}
           <p className="password-hint">Если забудешь пароль, всегда можно войти по коду из письма.</p>
         </div>}
@@ -578,9 +599,15 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
 
   const post = async (body: Record<string, unknown>, success?: string, refresh = true) => {
     setSaving(true); setMessage("");
-    try { await api(body); if (refresh) await load(); if (success) setMessage(success); }
-    catch { setMessage("Что-то не сохранилось. Попробуй ещё раз."); }
-    finally { setSaving(false); }
+    try {
+      await api(body);
+      if (refresh) await load();
+      if (success) setMessage(success);
+      return true;
+    } catch {
+      setMessage("Что-то не сохранилось. Попробуй ещё раз.");
+      return false;
+    } finally { setSaving(false); }
   };
 
   if (!data && loadError) return <main className="app-stage"><section className="phone-shell loading error-loading"><img src={asset("penguin-transparent.png")} alt="Пингвин" width={180} height={180} /><h1>Не получилось загрузить</h1><p>Связь с базой прервалась. Нажми кнопку — я попробую ещё раз.</p><button className="primary-button" onClick={load}>Повторить</button></section></main>;
@@ -606,8 +633,8 @@ function SignedInApp({ user, theme, setTheme, onSignOut }: { user: User; theme: 
     </section></main>;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const todayCheckins = data.checkins.filter((item) => item.completedAt.startsWith(today));
+  const today = localDateKey();
+  const todayCheckins = data.checkins.filter((item) => localDateKey(item.completedAt) === today);
 
   return <main className="app-stage">
     <section className="phone-shell app-shell">
@@ -729,7 +756,7 @@ function InstallGuide({ installPrompt, onClose }: { installPrompt: InstallPrompt
 function RegistrationFinish({ data, saving, post }: {
   data: AppData;
   saving: boolean;
-  post: (body: Record<string, unknown>, success?: string) => Promise<void>;
+  post: (body: Record<string, unknown>, success?: string) => Promise<boolean>;
 }) {
   const [name, setName] = useState(data.profile.displayName);
   const [goal, setGoal] = useState(normalizeGoal(data.profile.goal));
@@ -737,7 +764,7 @@ function RegistrationFinish({ data, saving, post }: {
   const choices: Array<{ id: ReminderCategory | "all"; label: string }> = [
     { id: "basic", label: "Базовая забота" },
     { id: "hygiene", label: "Гигиена" },
-    { id: "weight", label: "Физическое здоровье" },
+    { id: "weight", label: "Активность и сон" },
     { id: "all", label: "Всё и сразу" },
   ];
 
@@ -758,7 +785,7 @@ function CareSectionsView({ data, setData }: { data: AppData; setData: React.Dis
   const sections: Array<{ id: ReminderCategory; title: string; text: string }> = [
     { id: "basic", title: "Базовая забота", text: "Вода, еда и отдых" },
     { id: "hygiene", title: "Гигиена", text: "Ежедневные и еженедельные дела" },
-    { id: "weight", title: "Физическое здоровье", text: "Прогулка, сон и упражнения" },
+    { id: "weight", title: "Активность и сон", text: "Прогулка, сон и упражнения" },
   ];
 
   if (section) {
@@ -813,11 +840,13 @@ function ReminderCatalog({ category, data, setData, setMessage }: {
     try {
       await request;
       if (saveVersions.current.get(next.id) === version) setMessage(success);
+      return true;
     } catch {
       if (saveVersions.current.get(next.id) === version) {
         updateLocal(previous);
         setMessage("Не получилось сохранить настройку");
       }
+      return false;
     } finally {
       if (saveVersions.current.get(next.id) === version) {
         saveQueues.current.delete(next.id);
@@ -826,14 +855,14 @@ function ReminderCatalog({ category, data, setData, setMessage }: {
     }
   };
   const heading = category === "basic" ? "Твои основные напоминания" : category === "hygiene" ? "Что напоминать" : "Полезные привычки";
-  return <section className="catalog-section"><div className="catalog-heading"><h2>{heading}</h2><span>до 10 времён</span></div>
+  return <section className="catalog-section"><div className="catalog-heading"><h2>{heading}</h2><span>до 10 времён на пункт</span></div>
     <div className="habit-list">{reminders.map((item) => <ReminderSetupCard
       key={item.id}
       reminder={item}
       expanded={expandedId === item.id}
       saving={savingIds.has(item.id)}
       onExpand={() => setExpandedId((current) => current === item.id ? null : item.id)}
-      onSave={(next, previous, success) => void save(next, previous, success)}
+      onSave={(next, previous, success) => save(next, previous, success)}
     />)}</div>
   </section>;
 }
@@ -843,7 +872,7 @@ function ReminderSetupCard({ reminder, expanded, saving, onExpand, onSave }: {
   expanded: boolean;
   saving: boolean;
   onExpand: () => void;
-  onSave: (next: Reminder, previous: Reminder, success?: string) => void;
+  onSave: (next: Reminder, previous: Reminder, success?: string) => Promise<boolean>;
 }) {
   const [draft, setDraft] = useState(reminder);
   useEffect(() => setDraft(reminder), [reminder]);
@@ -857,7 +886,7 @@ function ReminderSetupCard({ reminder, expanded, saving, onExpand, onSave }: {
   };
   const daySummary = draft.days.length === 7 ? "каждый день" : WEEKDAYS.filter((day) => draft.days.includes(day.id)).map((day) => day.short).join(", ");
   return <article className={`habit-setup-card ${reminder.enabled ? "enabled" : ""}`}>
-    <div className="habit-setup-top"><CareIcon type={reminder.type} /><div><h3>{reminderInfo(reminder).title}</h3><p>{reminderInfo(reminder).text}</p></div><ToggleSwitch checked={reminder.enabled} label={`Включить ${reminderInfo(reminder).title}`} onChange={(enabled) => onSave({ ...reminder, enabled }, reminder, enabled ? "Напоминание включено" : "Напоминание выключено")} /></div>
+    <div className="habit-setup-top"><CareIcon type={reminder.type} /><div><h3>{reminderInfo(reminder).title}</h3><p>{reminderInfo(reminder).text}</p></div><ToggleSwitch checked={reminder.enabled} disabled={saving} label={`Включить ${reminderInfo(reminder).title}`} onChange={(enabled) => { void onSave({ ...reminder, enabled }, reminder, enabled ? "Напоминание включено" : "Напоминание выключено"); }} /></div>
     {reminder.enabled && <button type="button" className="schedule-summary" onClick={onExpand}><Clock3 /><span>{reminder.times.join(" · ")}<small>{daySummary}</small></span><ChevronRight className={expanded ? "rotated" : ""} /></button>}
     {reminder.enabled && expanded && <div className="schedule-editor">
       {reminder.type === "exercise" && <label className="exercise-name">Какое упражнение?
@@ -865,14 +894,15 @@ function ReminderSetupCard({ reminder, expanded, saving, onExpand, onSave }: {
         <small>В уведомлении появится именно это название.</small>
       </label>}
       <strong>Время</strong>
-      <div className="time-row editable-times">{draft.times.map((time, index) => <span className="time-control" key={`${reminder.id}-${index}`}><input type="time" value={time} aria-label={`Время ${index + 1}`} onChange={(event) => setDraft((current) => ({ ...current, times: current.times.map((value, position) => position === index ? event.target.value : value) }))} /><button type="button" disabled={draft.times.length <= 1} onClick={() => setDraft((current) => ({ ...current, times: current.times.filter((_, position) => position !== index) }))}><X /></button></span>)}</div>
+      <div className="time-row editable-times">{draft.times.map((time, index) => <span className="time-control" key={`${reminder.id}-${index}`}><input type="time" value={time} aria-label={`Время ${index + 1}`} onChange={(event) => setDraft((current) => ({ ...current, times: current.times.map((value, position) => position === index ? event.target.value : value) }))} /><button type="button" disabled={draft.times.length <= 1} aria-label={`Удалить время ${time}`} onClick={() => setDraft((current) => ({ ...current, times: current.times.filter((_, position) => position !== index) }))}><X /></button></span>)}</div>
       {draft.times.length < 10 && <button type="button" className="add-time wide" onClick={addTime}><Plus /> Добавить время <small>{draft.times.length}/10</small></button>}
       <strong>Дни</strong>
-      <div className="weekday-picker">{WEEKDAYS.map((day) => <button key={day.id} type="button" className={draft.days.includes(day.id) ? "active" : ""} onClick={() => setDraft((current) => {
+      <div className="weekday-picker">{WEEKDAYS.map((day) => <button key={day.id} type="button" disabled={draft.days.length === 1 && draft.days.includes(day.id)} aria-label={draft.days.length === 1 && draft.days.includes(day.id) ? `${day.short}: нужен хотя бы один день` : day.short} className={draft.days.includes(day.id) ? "active" : ""} onClick={() => setDraft((current) => {
         const selected = current.days.includes(day.id) ? current.days.filter((value) => value !== day.id) : [...current.days, day.id];
         return { ...current, days: selected.length ? selected : current.days };
       })}>{day.short}</button>)}</div>
-      <button type="button" className="save-schedule" disabled={saving} onClick={() => { onSave({ ...draft, description: draft.description.trim(), times: [...new Set(draft.times)].sort().slice(0, 10), days: [...draft.days].sort() }, reminder); onExpand(); }}><Save /> {saving ? "Сохраняю…" : "Сохранить расписание"}</button>
+      {draft.days.length === 1 && <small className="schedule-note">Оставь хотя бы один день</small>}
+      <button type="button" className="save-schedule" disabled={saving} onClick={async () => { const saved = await onSave({ ...draft, description: draft.description.trim(), times: [...new Set(draft.times)].sort().slice(0, 10), days: [...draft.days].sort() }, reminder); if (saved) onExpand(); }}><Save /> {saving ? "Сохраняю…" : "Сохранить расписание"}</button>
     </div>}
   </article>;
 }
@@ -883,21 +913,11 @@ function TodayView({ data, setData, todayCheckins, onOpenCare }: {
   todayCheckins: Checkin[];
   onOpenCare: () => void;
 }) {
-  const [savingTimes, setSavingTimes] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editMessage, setEditMessage] = useState("");
-  const [draftReminders, setDraftReminders] = useState<Reminder[]>(data.reminders);
   const [checkinMessage, setCheckinMessage] = useState("");
+  const [pendingTypes, setPendingTypes] = useState<Set<ReminderType>>(new Set());
   const scheduledToday = data.reminders.filter((item) => item.enabled && item.days.includes(new Date().getDay()));
-  const visibleReminders = isEditing ? draftReminders : scheduledToday;
   const total = scheduledToday.reduce((sum, item) => sum + item.times.length, 0);
   const progress = total ? Math.min(100, Math.round(todayCheckins.length / total * 100)) : 0;
-  const updateReminder = (id: string, update: Partial<Reminder>) => setDraftReminders((current) =>
-    current.map((reminder) => reminder.id === id ? { ...reminder, ...update } : reminder));
-  const saveTimes = (item: Reminder, times: string[]) => {
-    updateReminder(item.id, { times: times.slice(0, 10) });
-    setEditMessage("");
-  };
   const reminderWord = (count: number) => {
     const mod100 = count % 100;
     const mod10 = count % 10;
@@ -906,73 +926,36 @@ function TodayView({ data, setData, todayCheckins, onOpenCare }: {
     if (mod10 >= 2 && mod10 <= 4) return "напоминания";
     return "напоминаний";
   };
-  const nextTime = (times: string[]) => {
-    const occupied = new Set(times);
-    const last = times[times.length - 1] || "07:00";
-    const match = /^(\d{2}):(\d{2})$/.exec(last);
-    let minutes = match ? Number(match[1]) * 60 + Number(match[2]) + 120 : 540;
-    for (let index = 0; index < 48; index += 1) {
-      minutes %= 1440;
-      const candidate = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-      if (!occupied.has(candidate)) return candidate;
-      minutes += 30;
-    }
-    return "09:00";
-  };
-  const beginEditing = () => {
-    setDraftReminders(data.reminders.map((item) => ({ ...item, times: [...item.times] })));
-    setEditMessage("");
-    setIsEditing(true);
-  };
-  const cancelEditing = () => {
-    setDraftReminders(data.reminders.map((item) => ({ ...item, times: [...item.times] })));
-    setEditMessage("");
-    setIsEditing(false);
-  };
-  const persistChanges = async () => {
-    setSavingTimes(true);
-    setEditMessage("");
-    try {
-      const requests: Array<Promise<Record<string, unknown>>> = [];
-      const cleaned = draftReminders.map((item) => {
-        const clean = [...new Set(item.times.filter((time) => /^\d{2}:\d{2}$/.test(time)))].sort().slice(0, 10);
-        return { ...item, times: clean.length ? clean : ["09:00"] };
-      });
-      cleaned.forEach((item) => {
-        const original = data.reminders.find((value) => value.id === item.id);
-        if (!original) return;
-        if (original.enabled !== item.enabled) requests.push(api({ action: "toggle", id: item.id, enabled: item.enabled }));
-        if (JSON.stringify(original.times) !== JSON.stringify(item.times)) requests.push(api({ action: "times", id: item.id, times: item.times }));
-      });
-      await Promise.all(requests);
-      setData((current) => current ? { ...current, reminders: cleaned } : current);
-      setDraftReminders(cleaned);
-      setIsEditing(false);
-      setEditMessage(requests.length ? "Изменения сохранены" : "Изменений не было");
-    } catch {
-      setEditMessage("Не получилось сохранить. Попробуй ещё раз");
-    } finally {
-      setSavingTimes(false);
-    }
-  };
-  const markNow = (item: Reminder) => {
+  const markNow = async (item: Reminder) => {
+    if (pendingTypes.has(item.type)) return;
     const checkin = { id: crypto.randomUUID(), type: item.type, completedAt: new Date().toISOString() };
+    setPendingTypes((current) => new Set(current).add(item.type));
     setData((current) => current ? { ...current, checkins: [checkin, ...current.checkins] } : current);
     setCheckinMessage("");
-    void api({ action: "checkin", type: item.type, id: checkin.id }).catch(() => {
+    try {
+      await api({ action: "checkin", type: item.type, id: checkin.id });
+    } catch {
       setData((current) => current ? { ...current, checkins: current.checkins.filter((value) => value.id !== checkin.id) } : current);
       setCheckinMessage("Отметка не сохранилась. Попробуй ещё раз");
-    });
+    } finally {
+      setPendingTypes((current) => { const next = new Set(current); next.delete(item.type); return next; });
+    }
   };
-  const undoLastCheckin = (type: ReminderType) => {
+  const undoLastCheckin = async (type: ReminderType) => {
+    if (pendingTypes.has(type)) return;
     const checkin = todayCheckins.find((item) => item.type === type);
     if (!checkin) return;
+    setPendingTypes((current) => new Set(current).add(type));
     setData((current) => current ? { ...current, checkins: current.checkins.filter((item) => item.id !== checkin.id) } : current);
     setCheckinMessage("");
-    void api({ action: "deleteCheckin", id: checkin.id }).catch(() => {
+    try {
+      await api({ action: "deleteCheckin", id: checkin.id });
+    } catch {
       setData((current) => current ? { ...current, checkins: [checkin, ...current.checkins].sort((a, b) => b.completedAt.localeCompare(a.completedAt)) } : current);
       setCheckinMessage("Не получилось отменить отметку");
-    });
+    } finally {
+      setPendingTypes((current) => { const next = new Set(current); next.delete(type); return next; });
+    }
   };
   return <div className="screen">
     <header className="screen-header greeting">
@@ -984,61 +967,57 @@ function TodayView({ data, setData, todayCheckins, onOpenCare }: {
       <div className="progress-ring" style={{ "--progress": `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div>
     </section>
     <div className="reminder-heading"><h2 className="section-title">Сегодня для тебя</h2>
-      {!isEditing && <button type="button" className="edit-reminders" onClick={onOpenCare}><LayoutGrid /> <span>Настроить</span></button>}
+      <button type="button" className="edit-reminders" onClick={onOpenCare}><LayoutGrid /> <span>Настроить</span></button>
     </div>
-    {editMessage && <p className={`edit-status ${editMessage.startsWith("Не получилось") ? "error" : ""}`}>{editMessage}</p>}
     {checkinMessage && <p className="edit-status error">{checkinMessage}</p>}
-    {!visibleReminders.length && <div className="today-empty"><CareIcon type="heart" /><div><h3>Сегодня свободно</h3><p>Можно добавить нужные напоминания в разделе настроек.</p></div></div>}
+    {!scheduledToday.length && <div className="today-empty"><CareIcon type="heart" /><div><h3>Сегодня свободно</h3><p>Можно добавить нужные напоминания в разделе настроек.</p></div></div>}
     <div className="reminder-stack">
-      {visibleReminders.map((item) => {
+      {scheduledToday.map((item) => {
         const done = todayCheckins.filter((checkin) => checkin.type === item.type).length;
         return <article className={`reminder-card ${!item.enabled ? "disabled" : ""}`} key={item.id}>
           <CareIcon type={item.type} />
           <div className="reminder-body">
             <div className="reminder-top"><div><h3>{item.title}</h3><p>{item.times.length} {reminderWord(item.times.length)} в день</p></div>
-              {isEditing
-                ? <ToggleSwitch checked={item.enabled} label={`Включить ${item.title}`} onChange={(enabled) => updateReminder(item.id, { enabled })} />
-                : <span className={`reminder-state ${item.enabled ? "on" : ""}`}>{item.enabled ? "Включено" : "Выключено"}</span>}
+              <span className="reminder-state on">Включено</span>
             </div>
-            {isEditing ? <>
-              <div className="time-row editable-times">{item.times.map((time, index) => <span className="time-control" key={`${item.id}-${index}`}>
-                <input type="time" aria-label={`Время напоминания ${index + 1}`} value={time} onChange={(event) => saveTimes(item, item.times.map((value, position) => position === index ? event.target.value : value))} />
-                <button type="button" disabled={item.times.length <= 1} aria-label={`Удалить время ${time}`} onClick={() => saveTimes(item, item.times.filter((_, position) => position !== index))}><X /></button>
-              </span>)}</div>
-              {item.times.length < 10 && <button className="add-time" type="button" onClick={() => saveTimes(item, [...item.times, nextTime(item.times)])}><Plus /> Добавить время <small>{item.times.length}/10</small></button>}
-              {isBasicType(item.type) && <button className="healthy-schedule" onClick={() => saveTimes(item, HEALTHY_TIMES[item.type as BasicReminderType])}>Предложить здоровый график</button>}
-            </> : <div className="time-row saved-times">{item.times.map((time) => <span key={`${item.id}-${time}`}>{time}</span>)}</div>}
-            {!isEditing && <div className="check-actions">
-              <button className="check-button" disabled={!item.enabled} onClick={() => markNow(item)}><Check /> Отметить сейчас {done > 0 && <b>{done}</b>}</button>
-              {done > 0 && <button className="undo-check-button" type="button" aria-label={`Отменить последнюю отметку: ${item.title}`} onClick={() => undoLastCheckin(item.type)}><Undo2 /></button>}
-            </div>}
+            <div className="time-row saved-times">{item.times.map((time) => <span key={`${item.id}-${time}`}>{time}</span>)}</div>
+            <div className="check-actions">
+              <button className="check-button" disabled={!item.enabled || pendingTypes.has(item.type)} onClick={() => void markNow(item)}><Check /> {pendingTypes.has(item.type) ? "Сохраняю…" : "Отметить сейчас"} {done > 0 && <b>{done}</b>}</button>
+              {done > 0 && <button className="undo-check-button" type="button" disabled={pendingTypes.has(item.type)} aria-label={`Отменить последнюю отметку: ${item.title}`} onClick={() => void undoLastCheckin(item.type)}><Undo2 /></button>}
+            </div>
           </div>
         </article>;
       })}
     </div>
-    {isEditing && <div className="edit-actions">
-      <button type="button" className="cancel-edit" disabled={savingTimes} onClick={cancelEditing}>Отмена</button>
-      <button className="primary-button reminder-save" disabled={savingTimes} onClick={persistChanges}>{savingTimes ? "Сохраняю…" : "Сохранить"}</button>
-    </div>}
   </div>;
 }
 
 function HistoryView({ checkins, setData }: { checkins: Checkin[]; setData: React.Dispatch<React.SetStateAction<AppData | null>> }) {
   const [confirmClear, setConfirmClear] = useState(false);
   const [historyMessage, setHistoryMessage] = useState("");
-  const today = new Date().toISOString().slice(0, 10);
-  const todayIds = checkins.filter((item) => item.completedAt.startsWith(today)).map((item) => item.id);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const today = localDateKey();
+  const visibleCheckins = useMemo(() => {
+    const keys = new Set(Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      return localDateKey(date);
+    }));
+    return checkins.filter((item) => keys.has(localDateKey(item.completedAt)));
+  }, [checkins]);
+  const todayIds = visibleCheckins.filter((item) => localDateKey(item.completedAt) === today).map((item) => item.id);
   const groups = useMemo(() => {
     const map = new Map<string, Checkin[]>();
-    checkins.forEach((item) => {
+    visibleCheckins.forEach((item) => {
       const key = new Date(item.completedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
       map.set(key, [...(map.get(key) || []), item]);
     });
     return [...map.entries()];
-  }, [checkins]);
+  }, [visibleCheckins]);
   const removeCheckins = async (ids: string[]) => {
-    if (!ids.length) return;
+    if (!ids.length || ids.some((id) => deletingIds.has(id))) return;
     const removed = checkins.filter((item) => ids.includes(item.id));
+    setDeletingIds((current) => new Set([...current, ...ids]));
     setData((current) => current ? { ...current, checkins: current.checkins.filter((item) => !ids.includes(item.id)) } : current);
     setHistoryMessage("");
     setConfirmClear(false);
@@ -1050,25 +1029,32 @@ function HistoryView({ checkins, setData }: { checkins: Checkin[]; setData: Reac
         checkins: [...current.checkins, ...removed.filter((item) => !current.checkins.some((value) => value.id === item.id))].sort((a, b) => b.completedAt.localeCompare(a.completedAt)),
       } : current);
       setHistoryMessage("Не получилось удалить отметки");
+    } finally {
+      setDeletingIds((current) => { const next = new Set(current); ids.forEach((id) => next.delete(id)); return next; });
     }
   };
-  return <div className="screen"><header className="screen-header history-header"><div><p>Твои маленькие победы</p><h1>История</h1></div>
-    {!!todayIds.length && <button type="button" onClick={() => setConfirmClear(true)}>Очистить сегодня</button>}
+  return <div className="screen"><header className="screen-header history-header"><div><p>Твои маленькие победы</p><h1>Последние 7 дней</h1></div>
+    {!!todayIds.length && <button type="button" disabled={todayIds.some((id) => deletingIds.has(id))} onClick={() => setConfirmClear(true)}>Очистить сегодня</button>}
   </header>
     {historyMessage && <p className="edit-status error">{historyMessage}</p>}
     {confirmClear && <div className="clear-confirm"><p>Удалить все отметки за сегодня?</p><div><button type="button" onClick={() => setConfirmClear(false)}>Оставить</button><button type="button" onClick={() => void removeCheckins(todayIds)}>Удалить</button></div></div>}
     {!groups.length ? <EmptyState text="Здесь появятся отметки о выбранных заботах." /> : groups.map(([date, items]) => <section className="history-day" key={date}>
-      <h2>{date}</h2>{items.map((item) => { const meta = REMINDER_COPY[item.type]; return <div className="history-item" key={item.id}><CareIcon type={item.type} className="tiny-icon" /><div><strong>{meta?.title || "Забота о себе"}</strong><span>{new Date(item.completedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span></div><button type="button" className="history-delete" aria-label={`Удалить отметку: ${meta?.title || "забота"}`} onClick={() => void removeCheckins([item.id])}><Trash2 /></button></div>; })}
+      <h2>{date}</h2>{items.map((item) => { const meta = REMINDER_COPY[item.type]; return <div className="history-item" key={item.id}><CareIcon type={item.type} className="tiny-icon" /><div><strong>{meta?.title || "Забота о себе"}</strong><span>{new Date(item.completedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span></div><button type="button" className="history-delete" disabled={deletingIds.has(item.id)} aria-label={`Удалить отметку: ${meta?.title || "забота"}`} onClick={() => void removeCheckins([item.id])}>{deletingIds.has(item.id) ? <LoaderCircle className="spin" /> : <Trash2 />}</button></div>; })}
     </section>)}
   </div>;
 }
 
 function StatsView({ data }: { data: AppData }) {
-  const checkins = data.checkins;
+  const visibleKeys = new Set(Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - index);
+    return localDateKey(date);
+  }));
+  const checkins = data.checkins.filter((item) => visibleKeys.has(localDateKey(item.completedAt)));
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(); date.setDate(date.getDate() - (6 - index));
-    const key = date.toISOString().slice(0, 10);
-    return { label: date.toLocaleDateString("ru-RU", { weekday: "short" }).replace(".", ""), count: checkins.filter((item) => item.completedAt.startsWith(key)).length };
+    const key = localDateKey(date);
+    return { label: date.toLocaleDateString("ru-RU", { weekday: "short" }).replace(".", ""), count: checkins.filter((item) => localDateKey(item.completedAt) === key).length };
   });
   const max = Math.max(1, ...days.map((day) => day.count));
   const categoryCount = (category: ReminderCategory) => checkins.filter((checkin) => data.reminders.find((reminder) => reminder.type === checkin.type)?.category === category).length;
@@ -1084,17 +1070,17 @@ function StatsView({ data }: { data: AppData }) {
     <section className="stat-hero"><CareIcon type="heart" /><strong>{checkins.length}</strong><span>{careWord(checkins.length)} о себе за 7 дней</span></section>
     <section className="chart-card"><h2>Неделя</h2><div className="bars">{days.map((day) => <div className="bar-column" key={day.label}><div className="bar-track"><div className="bar" style={{ height: `${Math.max(8, day.count / max * 100)}%` }}><span>{day.count || ""}</span></div></div><b>{day.label}</b></div>)}</div></section>
     <div className="stat-grid">{(["water", "food", "rest"] as BasicReminderType[]).map((type) => { const meta = META[type]; const count = checkins.filter((item) => item.type === type).length; return <article key={type}><CareIcon type={type} className="tiny-icon" /><strong>{count}</strong><span>{meta.title}</span></article>; })}</div>
-    <h2 className="stat-section-title">По разделам</h2><div className="category-stats"><article><span className="category-stat-icon basic"><SectionGlyph category="basic" /></span><span><strong>{categoryCount("basic")}</strong><small>Базовая забота</small></span></article><article><span className="category-stat-icon hygiene"><SectionGlyph category="hygiene" /></span><span><strong>{categoryCount("hygiene")}</strong><small>Гигиена</small></span></article><article><span className="category-stat-icon weight"><SectionGlyph category="weight" /></span><span><strong>{categoryCount("weight")}</strong><small>Физическое здоровье</small></span></article></div>
+    <h2 className="stat-section-title">По разделам</h2><div className="category-stats"><article><span className="category-stat-icon basic"><SectionGlyph category="basic" /></span><span><strong>{categoryCount("basic")}</strong><small>Базовая забота</small></span></article><article><span className="category-stat-icon hygiene"><SectionGlyph category="hygiene" /></span><span><strong>{categoryCount("hygiene")}</strong><small>Гигиена</small></span></article><article><span className="category-stat-icon weight"><SectionGlyph category="weight" /></span><span><strong>{categoryCount("weight")}</strong><small>Активность и сон</small></span></article></div>
   </div>;
 }
 
-function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpenInstall, onSignOut }: { data: AppData; setData: React.Dispatch<React.SetStateAction<AppData | null>>; user: User; saving: boolean; post: (body: Record<string, unknown>, success?: string, refresh?: boolean) => Promise<void>; theme: Theme; setTheme: (theme: Theme) => void; onOpenInstall: () => void; onSignOut: () => void }) {
+function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpenInstall, onSignOut }: { data: AppData; setData: React.Dispatch<React.SetStateAction<AppData | null>>; user: User; saving: boolean; post: (body: Record<string, unknown>, success?: string, refresh?: boolean) => Promise<boolean>; theme: Theme; setTheme: (theme: Theme) => void; onOpenInstall: () => void; onSignOut: () => void }) {
   const [name, setName] = useState(data.profile.displayName);
   const [goal, setGoal] = useState(normalizeGoal(data.profile.goal));
   const [avatarId, setAvatarId] = useState<AvatarId>(avatarById(data.profile.avatarId).id);
   const [isEditing, setIsEditing] = useState(false);
   const [notificationNote, setNotificationNote] = useState("");
-  const goalLabel = goal === "basic" ? "Базовая забота" : goal === "hygiene" ? "Гигиена" : goal === "weight" ? "Физическое здоровье" : "Всё и сразу";
+  const goalLabel = goal === "basic" ? "Базовая забота" : goal === "hygiene" ? "Гигиена" : goal === "weight" ? "Активность и сон" : "Всё и сразу";
   const notificationStatus = typeof window !== "undefined" && "Notification" in window
     ? Notification.permission === "granted" ? "Включены · проверка при открытом приложении" : "Нажми, чтобы включить"
     : "Сначала добавь приложение на экран";
@@ -1106,7 +1092,8 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
       if (permission !== "granted") { setNotificationNote("Разрешение не выдано в настройках браузера"); return; }
       const registration = await navigator.serviceWorker.ready;
       await registration.showNotification("Уведомления работают", { body: "Это проверочное сообщение от «Не забывай»", tag: "notification-test", icon: asset("app-icon-192.png"), badge: asset("app-icon-192.png") });
-      await post({ action: "profile", displayName: name, goal, avatarId, notificationsEnabled: true }, "Проверочное уведомление отправлено", false);
+      const saved = await post({ action: "profile", displayName: name, goal, avatarId, notificationsEnabled: true }, "Проверочное уведомление отправлено", false);
+      if (!saved) return;
       setData((current) => current ? { ...current, profile: { ...current.profile, notificationsEnabled: true } } : current);
       setNotificationNote("Проверочное уведомление отправлено");
     } catch { setNotificationNote("Не получилось показать уведомление в этом браузере"); }
@@ -1114,9 +1101,10 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
   const chooseAvatar = (nextAvatar: AvatarId) => {
     setAvatarId(nextAvatar);
   };
-  const saveProfile = () => {
+  const saveProfile = async () => {
+    const saved = await post({ action: "profile", displayName: name, goal, avatarId }, "Профиль сохранён", false);
+    if (!saved) return;
     setData((current) => current ? { ...current, profile: { ...current.profile, displayName: name, goal, avatarId } } : current);
-    void post({ action: "profile", displayName: name, goal, avatarId }, "Профиль сохранён", false);
     setIsEditing(false);
   };
   const cancelEditing = () => {
@@ -1133,8 +1121,8 @@ function ProfileView({ data, setData, user, saving, post, theme, setTheme, onOpe
         <div className="avatar-grid">{AVATARS.map((avatar) => <button type="button" key={avatar.id} className={avatarId === avatar.id ? "selected" : ""} aria-label={avatar.label} aria-pressed={avatarId === avatar.id} onClick={() => chooseAvatar(avatar.id)}><PenguinAvatar avatarId={avatar.id} alt="" />{avatarId === avatar.id && <Check />}</button>)}</div>
       </section>
       <section className="settings-card"><label>Как к тебе обращаться?<input value={name} onChange={(event) => setName(event.target.value)} maxLength={40} /></label>
-        <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="basic">Базовая забота</option><option value="hygiene">Гигиена</option><option value="weight">Физическое здоровье</option></select></label>
-        <div className="profile-form-actions"><button type="button" className="secondary-button" disabled={saving} onClick={cancelEditing}>Отмена</button><button className="primary-button save-button" disabled={saving || !name.trim()} onClick={saveProfile}><Save /> Сохранить</button></div>
+        <label>Главная цель<select value={goal} onChange={(event) => setGoal(event.target.value)}><option value="all">Всё и сразу</option><option value="basic">Базовая забота</option><option value="hygiene">Гигиена</option><option value="weight">Активность и сон</option></select></label>
+        <div className="profile-form-actions"><button type="button" className="secondary-button" disabled={saving} onClick={cancelEditing}>Отмена</button><button className="primary-button save-button" disabled={saving || !name.trim()} onClick={() => void saveProfile()}><Save /> Сохранить</button></div>
       </section>
     </>}
     <section className="settings-list">
